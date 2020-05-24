@@ -1,29 +1,33 @@
 ---
 layout: post
-title:  "Welcome to Jekyll!"
+title:  Look, a post
 date:   2020-05-24 15:09:13 +1000
 categories: jekyll update
 ---
-You’ll find this post in your `_posts` directory. Go ahead and edit it and re-build the site to see your changes. You can rebuild the site in many different ways, but the most common way is to run `jekyll serve`, which launches a web server and auto-regenerates your site when a file is updated.
 
-Jekyll requires blog post files to be named according to the following format:
+Oh look a post. So why did I choose to use jekyll?
 
-`YEAR-MONTH-DAY-title.MARKUP`
+Short answer: because html is a bore.
 
-Where `YEAR` is a four-digit number, `MONTH` and `DAY` are both two-digit numbers, and `MARKUP` is the file extension representing the format used in the file. After that, include the necessary front matter. Take a look at the source for this post to get an idea about how it works.
+To test things out, below is an elisp hack for collecting slime/sly's fasls into a single directory.
 
-Jekyll also offers powerful support for code snippets:
+{% highlight lisp %}
+(defvar *my-fasldir* "fasl/")
 
-{% highlight ruby %}
-def print_hi(name)
-  puts "Hi, #{name}"
-end
-print_hi('Tom')
-#=> prints 'Hi, Tom' to STDOUT.
+(defun my-sly-compile-file ()
+  (interactive)
+  (let* ((rootdir (projectile-project-root))
+         (fasldir (concat (projectile-project-root) *my-fasldir*))
+         (relative-dir (string-trim-right
+                        (substring (buffer-file-name (current-buffer)) (length rootdir))
+                        "[^/]+"))
+         (file-fasl-dir (concat fasldir relative-dir)))
+    (make-directory file-fasl-dir t)
+    (setq sly-compile-file-options (list :fasl-directory file-fasl-dir))
+    (sly-compile-file)))
+
+; if using use-package do
+; :bind (:map sly-editing-mode-map ("C-c C-k" . #'my-sly-compile-file))
+; otherwise
+(bind-key "C-c C-k" #'my-sly-compile-file sly-editing-mode-map)
 {% endhighlight %}
-
-Check out the [Jekyll docs][jekyll-docs] for more info on how to get the most out of Jekyll. File all bugs/feature requests at [Jekyll’s GitHub repo][jekyll-gh]. If you have questions, you can ask them on [Jekyll Talk][jekyll-talk].
-
-[jekyll-docs]: https://jekyllrb.com/docs/home
-[jekyll-gh]:   https://github.com/jekyll/jekyll
-[jekyll-talk]: https://talk.jekyllrb.com/

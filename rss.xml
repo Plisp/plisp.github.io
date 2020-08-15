@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>A programming blog</title> <link></link> <atom:link href="/rss.xml" rel="self" type="application/rss+xml" /> <language>en-us</language> <pubDate>Sat, 15 Aug 2020 13:58:06 +1000</pubDate> <item> <title>2020-08-15</title> <link>/posts/2020-08-15.html</link> <pubDate>2020-08-15 10:23:51</pubDate> <author>plisp</author> <guid isPermaLink="true">/posts/2020-08-15.html</guid> <category><![CDATA[ meta ]]></category> <description><![CDATA[ <h1>Update</h1>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>A programming blog</title> <link></link> <atom:link href="/rss.xml" rel="self" type="application/rss+xml" /> <language>en-us</language> <pubDate>Sat, 15 Aug 2020 14:00:04 +1000</pubDate> <item> <title>2020-08-15</title> <link>/posts/2020-08-15.html</link> <pubDate>2020-08-15 10:23:51</pubDate> <author>plisp</author> <guid isPermaLink="true">/posts/2020-08-15.html</guid> <category><![CDATA[ meta ]]></category> <description><![CDATA[ <h1>Update</h1>
 
 <p>Switched from jekyll to coleslaw. Things look much nicer now.
 Code highlighting is looking real sexy.</p>

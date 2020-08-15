@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom"> <title>A programming blog</title> <link href=""/> <link type="application/atom+xml" rel="self" href="/atom.xml"/> <updated>Sat, 15 Aug 2020 13:53:48 +1000</updated> <author> <name>plisp</name> </author> <entry> <link type="text/html" rel="alternate" href="/posts/2020-08-15.html"/> <title>2020-08-15</title> <published>2020-08-15 10:23:51</published> <updated>2020-08-15 10:23:51</updated> <author> <name>plisp</name> <uri></uri> </author> <content type="html">&lt;h1&gt;Update&lt;/h1&gt;
+
+&lt;p&gt;Switched from jekyll to coleslaw. Things look much nicer now.
+Code highlighting is looking real sexy.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;code&quot;&gt;&lt;span class=&quot;paren1&quot;&gt;(&lt;span class=&quot;code&quot;&gt;&lt;i&gt;&lt;span class=&quot;symbol&quot;&gt;defvar&lt;/span&gt;&lt;/i&gt; &lt;span class=&quot;special&quot;&gt;*my-fasldir*&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;&quot;fasl/&quot;&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;paren1&quot;&gt;(&lt;span class=&quot;code&quot;&gt;&lt;i&gt;&lt;span class=&quot;symbol&quot;&gt;defun&lt;/span&gt;&lt;/i&gt; my-sly-compile-file &lt;span class=&quot;paren2&quot;&gt;(&lt;span class=&quot;code&quot;&gt;&lt;/span&gt;)&lt;/span&gt;
+  &lt;span class=&quot;paren2&quot;&gt;(&lt;span class=&quot;code&quot;&gt;interactive&lt;/span&gt;)&lt;/span&gt;
+  &lt;span class=&quot;paren2&quot;&gt;(&lt;span class=&quot;code&quot;&gt;&lt;i&gt;&lt;span class=&quot;symbol&quot;&gt;let*&lt;/span&gt;&lt;/i&gt; &lt;span class=&quot;paren3&quot;&gt;(&lt;span class=&quot;code&quot;&gt;&lt;span class=&quot;paren4&quot;&gt;(&lt;span class=&quot;code&quot;&gt;rootdir &lt;span class=&quot;paren5&quot;&gt;(&lt;span class=&quot;code&quot;&gt;projectile-project-root&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;
+         &lt;span class=&quot;paren4&quot;&gt;(&lt;span class=&quot;code&quot;&gt;fasldir &lt;span class=&quot;paren5&quot;&gt;(&lt;span class=&quot;code&quot;&gt;concat &lt;span class=&quot;paren6&quot;&gt;(&lt;span class=&quot;code&quot;&gt;projectile-project-root&lt;/span&gt;)&lt;/span&gt; &lt;span class=&quot;special&quot;&gt;*my-fasldir*&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;
+         &lt;span class=&quot;paren4&quot;&gt;(&lt;span class=&quot;code&quot;&gt;relative-dir &lt;span class=&quot;paren5&quot;&gt;(&lt;span class=&quot;code&quot;&gt;string-trim-right
+                        &lt;span class=&quot;paren6&quot;&gt;(&lt;span class=&quot;code&quot;&gt;substring &lt;span class=&quot;paren1&quot;&gt;(&lt;span class=&quot;code&quot;&gt;buffer-file-name &lt;span class=&quot;paren2&quot;&gt;(&lt;span class=&quot;code&quot;&gt;current-buffer&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt; &lt;span class=&quot;paren1&quot;&gt;(&lt;span class=&quot;code&quot;&gt;length rootdir&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;
+                        &lt;span class=&quot;string&quot;&gt;&quot;[^/]+&quot;&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;
+         &lt;span class=&quot;paren4&quot;&gt;(&lt;span class=&quot;code&quot;&gt;file-fasl-dir &lt;span class=&quot;paren5&quot;&gt;(&lt;span class=&quot;code&quot;&gt;concat fasldir relative-dir&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;
+    &lt;span class=&quot;paren3&quot;&gt;(&lt;span class=&quot;code&quot;&gt;make-directory file-fasl-dir t&lt;/span&gt;)&lt;/span&gt;
+    &lt;span class=&quot;paren3&quot;&gt;(&lt;span class=&quot;code&quot;&gt;&lt;i&gt;&lt;span class=&quot;symbol&quot;&gt;setq&lt;/span&gt;&lt;/i&gt; sly-compile-file-options &lt;span class=&quot;paren4&quot;&gt;(&lt;span class=&quot;code&quot;&gt;list &lt;span class=&quot;keyword&quot;&gt;:fasl-directory&lt;/span&gt; file-fasl-dir&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;
+    &lt;span class=&quot;paren3&quot;&gt;(&lt;span class=&quot;code&quot;&gt;sly-compile-file&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;comment&quot;&gt;; if using use-package do
+&lt;/span&gt;&lt;span class=&quot;comment&quot;&gt;; :bind (:map sly-editing-mode-map (&quot;C-c C-k&quot; . #&#039;my-sly-compile-file))
+&lt;/span&gt;&lt;span class=&quot;comment&quot;&gt;; otherwise
+&lt;/span&gt;&lt;span class=&quot;paren1&quot;&gt;(&lt;span class=&quot;code&quot;&gt;bind-key &lt;span class=&quot;string&quot;&gt;&quot;C-c C-k&quot;&lt;/span&gt; #&#039;my-sly-compile-file sly-editing-mode-map&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The scope highlighting is not particularly useful at the moment as finding colors that don&#039;t clash with solarized is a real challenge.&lt;/p&gt;
+</content> </entry> </feed>

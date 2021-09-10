@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>A programming blog</title> <link></link> <atom:link href="/rss.xml" rel="self" type="application/rss+xml" /> <language>en-us</language> <pubDate>Sun, 29 Aug 2021 01:39:49 +0000</pubDate> <item> <title>A trick for simpler priority queues</title> <link>/posts/A-trick-for-simpler-priority-queues.html</link> <pubDate>2021-08-28 18:20:08</pubDate> <author>plisp</author> <guid isPermaLink="true">/posts/A-trick-for-simpler-priority-queues.html</guid> <category><![CDATA[ data-structures ]]></category> <description><![CDATA[ <p>I almost forgot I had this blog setup, but today I found a interesting trick which nobody
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>A programming blog</title> <link></link> <atom:link href="/rss.xml" rel="self" type="application/rss+xml" /> <language>en-us</language> <pubDate>Fri, 10 Sep 2021 09:04:40 +1000</pubDate> <item> <title>A trick for simpler priority queues</title> <link>/posts/A-trick-for-simpler-priority-queues.html</link> <pubDate>2021-08-28 18:20:08</pubDate> <author>plisp</author> <guid isPermaLink="true">/posts/A-trick-for-simpler-priority-queues.html</guid> <category><![CDATA[ data-structures ]]></category> <description><![CDATA[ <p>I almost forgot I had this blog setup, but today I found a interesting trick which nobody
 seems to have used in their heaps, so here it is.</p>
+
+<!--more-->
 
 <p><a href="http://opendatastructures.org/ods-python/10_Heaps.html" >Heaps</a> are a common structure
 for implementing priority queues, being able to both extract the minimum/maximum priority
@@ -12,13 +14,13 @@ and <code>2i+2</code>, and its parent at <code>(i-1)/2</code>. However by leavin
 indexing the heap from 1, you can simplify these calculations and save a few arithmetic ops.</p>
 
 <p align="center">
-  <img width="460" height="300" src="http://www.fillmurray.com/460/300">
+  <img width="460" height="300" src="../static/heap.png">
 </p>
 
 <p>Additionally, if you <code>aligned_alloc</code> the heap array, you may be able to improve cache
 alignment of children. For example, assuming 64-bit integer elements and cache lines, the 8
 great-grandchildren of <code>a[i]</code> at indices <code>a[8i]</code> to <code>a[8i+7]</code> will lie in a single cache
-line as 64 divides <code>8i * 8 bytes</code>. This allows prefetching multiple levels in advance).</p>
+line as 64 divides <code>8i * 8 bytes</code>. This allows prefetching multiple levels in advance.</p>
 
 <p>Further if you keep the heap capacity as a power of 2, you get a complete binary tree,
 and so the depth of a large heap should be obvious to the branch predictor. Then sifting
@@ -70,10 +72,10 @@ Heap *heap_new<span class="paren1">(<span class="code"></span>)</span> <span cla
 </span>}</span></span></code></pre>
 
 <p>More posts to come soon.</p>
- ]]></description> </item><item> <title>2020-08-15</title> <link>/posts/2020-08-15.html</link> <pubDate>2020-08-15 10:23:51</pubDate> <author>plisp</author> <guid isPermaLink="true">/posts/2020-08-15.html</guid> <category><![CDATA[ meta ]]></category> <description><![CDATA[ <h1>Update</h1>
-
-<p>Switched from jekyll to coleslaw. Things look much nicer now.
+ ]]></description> </item><item> <title>2020-08-15</title> <link>/posts/2020-08-15.html</link> <pubDate>2020-08-15 10:23:51</pubDate> <author>plisp</author> <guid isPermaLink="true">/posts/2020-08-15.html</guid> <category><![CDATA[ meta ]]></category> <description><![CDATA[ <p>Switched from jekyll to coleslaw. Things look much nicer now.
 Code highlighting is looking real sexy.</p>
+
+<!--more-->
 
 <pre><code><span class="code"><span class="paren1">(<span class="code"><i><span class="symbol">defvar</span></i> <span class="special">*my-fasldir*</span> <span class="string">"fasl/"</span></span>)</span>
 

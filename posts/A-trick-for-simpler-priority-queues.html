@@ -16,6 +16,8 @@
 <p> Tagged as <a href="/tag/data-structures.html">data-structures</a> </p> <p class="date-posted"> Written on 2021-08-28 18:20:08 </p> <p>I almost forgot I had this blog setup, but today I found a interesting trick which nobody
 seems to have used in their heaps, so here it is.</p>
 
+<!--more-->
+
 <p><a href="http://opendatastructures.org/ods-python/10_Heaps.html" >Heaps</a> are a common structure
 for implementing priority queues, being able to both extract the minimum/maximum priority
 element and insert a new element in <code>O(log n)</code>. The typical implementation is an implicit
@@ -26,13 +28,13 @@ and <code>2i+2</code>, and its parent at <code>(i-1)/2</code>. However by leavin
 indexing the heap from 1, you can simplify these calculations and save a few arithmetic ops.</p>
 
 <p align="center">
-  <img width="460" height="300" src="http://www.fillmurray.com/460/300">
+  <img width="460" height="300" src="../static/heap.png">
 </p>
 
 <p>Additionally, if you <code>aligned_alloc</code> the heap array, you may be able to improve cache
 alignment of children. For example, assuming 64-bit integer elements and cache lines, the 8
 great-grandchildren of <code>a[i]</code> at indices <code>a[8i]</code> to <code>a[8i+7]</code> will lie in a single cache
-line as 64 divides <code>8i * 8 bytes</code>. This allows prefetching multiple levels in advance).</p>
+line as 64 divides <code>8i * 8 bytes</code>. This allows prefetching multiple levels in advance.</p>
 
 <p>Further if you keep the heap capacity as a power of 2, you get a complete binary tree,
 and so the depth of a large heap should be obvious to the branch predictor. Then sifting

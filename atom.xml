@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
-<feed xmlns="http://www.w3.org/2005/Atom"> <title>A programming blog</title> <link href=""/> <link type="application/atom+xml" rel="self" href="/atom.xml"/> <updated>Sun, 29 Aug 2021 01:39:49 +0000</updated> <author> <name>plisp</name> </author> <entry> <link type="text/html" rel="alternate" href="/posts/A-trick-for-simpler-priority-queues.html"/> <title>A trick for simpler priority queues</title> <published>2021-08-28 18:20:08</published> <updated>2021-08-28 18:20:08</updated> <author> <name>plisp</name> <uri></uri> </author> <content type="html">&lt;p&gt;I almost forgot I had this blog setup, but today I found a interesting trick which nobody
+<feed xmlns="http://www.w3.org/2005/Atom"> <title>A programming blog</title> <link href=""/> <link type="application/atom+xml" rel="self" href="/atom.xml"/> <updated>Fri, 10 Sep 2021 09:04:40 +1000</updated> <author> <name>plisp</name> </author> <entry> <link type="text/html" rel="alternate" href="/posts/A-trick-for-simpler-priority-queues.html"/> <title>A trick for simpler priority queues</title> <published>2021-08-28 18:20:08</published> <updated>2021-08-28 18:20:08</updated> <author> <name>plisp</name> <uri></uri> </author> <content type="html">&lt;p&gt;I almost forgot I had this blog setup, but today I found a interesting trick which nobody
 seems to have used in their heaps, so here it is.&lt;/p&gt;
+
+&lt;!--more--&gt;
 
 &lt;p&gt;&lt;a href=&quot;http://opendatastructures.org/ods-python/10_Heaps.html&quot; &gt;Heaps&lt;/a&gt; are a common structure
 for implementing priority queues, being able to both extract the minimum/maximum priority
@@ -12,13 +14,13 @@ and &lt;code&gt;2i+2&lt;/code&gt;, and its parent at &lt;code&gt;(i-1)/2&lt;/cod
 indexing the heap from 1, you can simplify these calculations and save a few arithmetic ops.&lt;/p&gt;
 
 &lt;p align=&quot;center&quot;&gt;
-  &lt;img width=&quot;460&quot; height=&quot;300&quot; src=&quot;http://www.fillmurray.com/460/300&quot;&gt;
+  &lt;img width=&quot;460&quot; height=&quot;300&quot; src=&quot;../static/heap.png&quot;&gt;
 &lt;/p&gt;
 
 &lt;p&gt;Additionally, if you &lt;code&gt;aligned_alloc&lt;/code&gt; the heap array, you may be able to improve cache
 alignment of children. For example, assuming 64-bit integer elements and cache lines, the 8
 great-grandchildren of &lt;code&gt;a[i]&lt;/code&gt; at indices &lt;code&gt;a[8i]&lt;/code&gt; to &lt;code&gt;a[8i+7]&lt;/code&gt; will lie in a single cache
-line as 64 divides &lt;code&gt;8i * 8 bytes&lt;/code&gt;. This allows prefetching multiple levels in advance).&lt;/p&gt;
+line as 64 divides &lt;code&gt;8i * 8 bytes&lt;/code&gt;. This allows prefetching multiple levels in advance.&lt;/p&gt;
 
 &lt;p&gt;Further if you keep the heap capacity as a power of 2, you get a complete binary tree,
 and so the depth of a large heap should be obvious to the branch predictor. Then sifting
@@ -70,10 +72,10 @@ Heap *heap_new&lt;span class=&quot;paren1&quot;&gt;(&lt;span class=&quot;code&qu
 &lt;/span&gt;}&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;More posts to come soon.&lt;/p&gt;
-</content> </entry><entry> <link type="text/html" rel="alternate" href="/posts/2020-08-15.html"/> <title>2020-08-15</title> <published>2020-08-15 10:23:51</published> <updated>2020-08-15 10:23:51</updated> <author> <name>plisp</name> <uri></uri> </author> <content type="html">&lt;h1&gt;Update&lt;/h1&gt;
-
-&lt;p&gt;Switched from jekyll to coleslaw. Things look much nicer now.
+</content> </entry><entry> <link type="text/html" rel="alternate" href="/posts/2020-08-15.html"/> <title>2020-08-15</title> <published>2020-08-15 10:23:51</published> <updated>2020-08-15 10:23:51</updated> <author> <name>plisp</name> <uri></uri> </author> <content type="html">&lt;p&gt;Switched from jekyll to coleslaw. Things look much nicer now.
 Code highlighting is looking real sexy.&lt;/p&gt;
+
+&lt;!--more--&gt;
 
 &lt;pre&gt;&lt;code&gt;&lt;span class=&quot;code&quot;&gt;&lt;span class=&quot;paren1&quot;&gt;(&lt;span class=&quot;code&quot;&gt;&lt;i&gt;&lt;span class=&quot;symbol&quot;&gt;defvar&lt;/span&gt;&lt;/i&gt; &lt;span class=&quot;special&quot;&gt;*my-fasldir*&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;&quot;fasl/&quot;&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;
 

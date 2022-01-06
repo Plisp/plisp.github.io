@@ -10,7 +10,7 @@
            (:numeric-index "~d")
            (:feed          "~a.xml")
            (:tag-feed      "tag/~a.xml"))
- :title "A programming blog" ;; a site title
+ :title "(gensym)" ;; a site title
  :theme "blog" ;; to select one of the themes in "coleslaw/themes/"
 
  ;; Optional information
@@ -32,8 +32,7 @@
            ;; default deploy method is rsync
            ; (rsync "-avz" "--delete" "--exclude" ".git/" "--exclude" ".gitignore" "--copy-links")
            )
- :sitenav ((:url "http://plisp.github.io" :name "Home")
-           (:url "http://github.com/plisp" :name "Github"))
+ :sitenav ((:url "http://github.com/plisp" :name "Github"))
  :staging-dir "/tmp/coleslaw/" ;; for Coleslaw to do intermediate work, default: "/tmp/coleslaw"
 )
 

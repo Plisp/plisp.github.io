@@ -5,8 +5,9 @@ date: 2021-08-28 18:20:08
 format: md
 ;;;;;
 
-I almost forgot I had this blog setup, but today I found a interesting trick which nobody
-seems to have used in their heaps, so here it is.
+I almost forgot I had this blog setup, but today I found a interesting trick which almost nobody
+seems to have used in their heaps so here it is
+([update: someone did](https://github.com/vy/libpqueue/blob/master/src/pqueue.c)).
 
 <!--more-->
 

@@ -1,6 +1,120 @@
 <?xml version="1.0"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>A programming blog</title> <link></link> <atom:link href="/rss.xml" rel="self" type="application/rss+xml" /> <language>en-us</language> <pubDate>Fri, 10 Sep 2021 09:04:40 +1000</pubDate> <item> <title>A trick for simpler priority queues</title> <link>/posts/A-trick-for-simpler-priority-queues.html</link> <pubDate>2021-08-28 18:20:08</pubDate> <author>plisp</author> <guid isPermaLink="true">/posts/A-trick-for-simpler-priority-queues.html</guid> <category><![CDATA[ data-structures ]]></category> <description><![CDATA[ <p>I almost forgot I had this blog setup, but today I found a interesting trick which nobody
-seems to have used in their heaps, so here it is.</p>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>(gensym)</title> <link>https://plisp.github.io</link> <atom:link href="https://plisp.github.io/rss.xml" rel="self" type="application/rss+xml" /> <language>en-us</language> <pubDate>Thu, 06 Jan 2022 02:03:01 +0000</pubDate> <item> <title>Editing abstraction not text</title> <link>https://plisp.github.io/posts/Editing-abstraction-not-text.html</link> <pubDate>2021-11-29 10:24:59</pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io/posts/Editing-abstraction-not-text.html</guid> <category><![CDATA[ editing ]]></category> <description><![CDATA[ <p>So I started off writing a <a href="https://github.com/Plisp/vico" >text editor</a>
+that would suit my needs: being fully extensible via a scripting language <strong>and</strong> performant.
+Along the way I devised <a href="https://github.com/Plisp/libst" >an improvement</a> on the
+<a href="https://en.wikipedia.org/wiki/Piece_table" >piece-table</a>
+which significantly outperforms all existing similar data structures to my knowledge.
+There was a small caveat to my particular implementation - it exploited the
+fact that codepoint and line number tracking are not crucial in the backend of a
+text editor (details in paper), meaning much of the file did not need to be read with expensive
+system calls, instead lazily loaded by the operating system's virtual memory subsystem.</p>
+
+<p>Arguably at that point my implementation was not exactly comparable to others since I was
+no longer providing the same abstract interface as typical text buffers. But the key insight
+is that bytes, codepoints and lines are simply not the units in which we percieve code.</p>
+
+<p>When designing a development environment, I think a good premise is that not everything is text,
+just as <a href="https://www.youtube.com/watch?v=9-IWMbJXoLM" >not everything is a file</a>.</p>
+
+<!--more-->
+
+<h3>Problems with text editing, bandaid solutions</h3>
+
+<p>Treating code as a string of bytes leads to worse semantic awareness in tooling and
+inevitable efficiency problems beyond text editing, even with things as simple as
+<a href="https://code.visualstudio.com/blogs/2021/09/29/bracket-pair-colorization" >bracket matching</a>, which
+require knowledge of the source code's implicit structure, as some are part of strings, comments
+escaped literals, etc.
+Instead, a code editor's document representation should reflect semantic structures like variables,
+blocks and function definitions, while text remains a secondary format for on-disk persistence.</p>
+
+<p>Tools like tree-sitter and regex lexers which attempt to analyze code as text ultimately fail when
+syntax depends on semantics. In the C example below, the correct highlighting of the variable
+<code>a</code> needs to identify that <code>foo</code> is in fact a type and so the expression casts <code>(a+3)</code> to a <code>foo</code>
+rather than calling the function <code>foo</code>.</p>
+
+<pre><code><span class="code"><span class="symbol">typedef</span> <span class="symbol">int</span> foo;
+<span class="paren1">(<span class="code">foo</span>)</span><span class="paren1">(<span class="code">a + 3</span>)</span>;</span></code></pre>
+
+<p>Of course, complete analysis of code essentially means rewriting a compiler frontend which parses
+text and builds a graph of semantic objects, known as an Abstract Syntax Graph or ASG.
+This duplication of effort is unfortunately necessary
+to build good tooling as compilers (libclang being an exception, however not incremental enough
+for use in an editor) don't typically expose their
+internal representation of code. In an <a href="https://www.youtube.com/watch?v=39wlNRk-nAg" >ideal world</a>
+compilers would produce artifacts that syntax highlighting, formatting, completion
+and <code>ctags</code> can reuse.</p>
+
+<p>And to address the elephant in the room - Microsoft's Language Server Protocol introduces
+great friction (asynchronous procedure calls? UTF-16 indices?) for achieving
+relatively mundane functionality and is inextensible.
+There are two significant problems with isolating the ASG in a separate process:</p>
+
+<ul>
+<li>Availability - Say you want to determine whether a variable is global in an unfamiliar codebase.
+This doesn't exist in the protocol and are not trivial to determine,
+so do you hack it into the lsp server and client or wait for Microsoft to standardize a new call?</li>
+<li>Granularity - Say you wanted a list of all mutations of a variable in a function.
+This doesn't exist in the protocol, but could be implemented by calling <code>DocumentHighlight</code>,
+which returns all references to the symbol and whether they are read/writes, and trimming
+the list to the current function body by using a <code>DocumentSymbol</code> hierachy. However now you get back
+<em>every</em> reference to the symbol in the file, which is significantly more work than necessary,
+explaining why the feature is typically unimplemented.</li>
+</ul>
+
+<h3>A semantic editor</h3>
+
+<p>If editor scripting could access the code's syntax tree, the above would be trivial.
+However LSP's capabilities only scratch the surface of possibilities, representing the lowest
+common denominator of a multitude of languages. Let's try a stream of consciousness...
+Given a database of types, function definitions, variables and an AST it is possible to:</p>
+
+<ul>
+<li>provide scripting of highlighting modes, emphasizing particular variables, mutations and
+accurate conventional semantic highlighting of keywords, types, etc.</li>
+<li>augmenting hardcoded snippets, dynamically guess completion of valid control flow constructs</li>
+<li>edit structurally, eliminating syntax errors</li>
+<li>edit alternate visual representations: C like python without extraneous braces and semicolons,
+or even scratch (cursed), edit math equations typeset inline with latex</li>
+</ul>
+
+<p align="center">
+  <img src="../static/cpython.png">
+</p>
+
+<ul>
+<li>write code generating macros in the scripting language of the editor rather than the programming
+language (more on this in future posts)</li>
+<li>execute code in a REPL: live within an editor without waiting for recompilation</li>
+<li>debug by richly inspecting state and directly redefining functions</li>
+<li>generate a control flow graph leading up to a debugger crash, displaying values of variables
+involved at each branch (a normal debugger cannot do this! you need the original source)</li>
+<li>track memory allocations, detecting accesses out of bounds and identifying their source (without
+leaving the editor and running valgrind)</li>
+</ul>
+
+<h3>Reducing working memory load</h3>
+
+<p>What's the point of all this?
+Computers once ran binary machine code, we moved to assembler, to high-level languages like lisp,
+java, rust to increase the level of abstraction, reducing the mental overhead of low-level concerns
+which distract from solving the actual problem at hand.</p>
+
+<p>An editor environment can provide the programmer at a keystroke with a complete reference of a
+programming language, the invariants and definitions in their code. Keeping such information
+within reach at all times would allow more precious working memory to be devoted to design;
+easing implementation and debugging.</p>
+
+<h3>It's hard</h3>
+
+<p>But of course first you need to implement a compiler frontend, an executor, an editor
+and make it all scalable - so I chose a simple enough static language: C (dynamic languages can
+be easier and harder in some respects).
+I'm currently working on a prototype C editor to experiment with the possibilities
+presented above. More posts to come!</p>
+ ]]></description> </item><item> <title>A trick for simpler priority queues</title> <link>https://plisp.github.io/posts/A-trick-for-simpler-priority-queues.html</link> <pubDate>2021-08-28 18:20:08</pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io/posts/A-trick-for-simpler-priority-queues.html</guid> <category><![CDATA[ data-structures ]]></category> <description><![CDATA[ <p>I almost forgot I had this blog setup, but today I found a interesting trick which almost nobody
+seems to have used in their heaps so here it is
+(<a href="https://github.com/vy/libpqueue/blob/master/src/pqueue.c" >update: someone did</a>).</p>
 
 <!--more-->
 
@@ -72,7 +186,7 @@ Heap *heap_new<span class="paren1">(<span class="code"></span>)</span> <span cla
 </span>}</span></span></code></pre>
 
 <p>More posts to come soon.</p>
- ]]></description> </item><item> <title>2020-08-15</title> <link>/posts/2020-08-15.html</link> <pubDate>2020-08-15 10:23:51</pubDate> <author>plisp</author> <guid isPermaLink="true">/posts/2020-08-15.html</guid> <category><![CDATA[ meta ]]></category> <description><![CDATA[ <p>Switched from jekyll to coleslaw. Things look much nicer now.
+ ]]></description> </item><item> <title>2020-08-15</title> <link>https://plisp.github.io/posts/2020-08-15.html</link> <pubDate>2020-08-15 10:23:51</pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io/posts/2020-08-15.html</guid> <category><![CDATA[ meta ]]></category> <description><![CDATA[ <p>Switched from jekyll to coleslaw. Things look much nicer now.
 Code highlighting is looking real sexy.</p>
 
 <!--more-->

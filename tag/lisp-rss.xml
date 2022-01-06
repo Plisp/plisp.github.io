@@ -1,2 +1,2 @@
 <?xml version="1.0"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>A programming blog</title> <link></link> <atom:link href="/rss.xml" rel="self" type="application/rss+xml" /> <language>en-us</language> <pubDate>Fri, 10 Sep 2021 09:04:40 +1000</pubDate>  </channel> </rss>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>(gensym)</title> <link>https://plisp.github.io</link> <atom:link href="https://plisp.github.io/rss.xml" rel="self" type="application/rss+xml" /> <language>en-us</language> <pubDate>Thu, 06 Jan 2022 02:03:01 +0000</pubDate>  </channel> </rss>

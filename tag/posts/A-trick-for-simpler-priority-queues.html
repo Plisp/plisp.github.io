@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en"> <head> <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> <title>(gensym)</title> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <link href="https://plisp.github.io/css/bootstrap.min.css" rel="stylesheet" media="screen"> <link href="https://plisp.github.io/css/custom.css" rel="stylesheet" media="screen"> <link rel="alternate" href="https://plisp.github.io/rss.xml" type="application/rss+xml" /> <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'foo']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script> </head> <body> <div class="container-fluid"> <div class="row-fluid"> <div class="offset2 span8"> <div class="row-fluid"> <div class="navbar navbar-inverse"> <div class="navbar-inner"> <a class="brand" href="https://plisp.github.io">(gensym)</a> <ul class="nav"> <li> <a href="http://github.com/plisp">Github</a> </li> </ul> </div> </div> </div> <div class="row-fluid"> <div class="row-fluid">
+<h1 class="page-header">A trick for simpler priority queues</h1>
+<p> Tagged as <a href="https://plisp.github.io/tag/data-structures.html">data-structures</a> </p> <p class="date-posted"> Written on 2021-08-28 18:20:08 </p> <p>I almost forgot I had this blog setup, but today I found a interesting trick which almost nobody
+seems to have used in their heaps so here it is
+(<a href="https://github.com/vy/libpqueue/blob/master/src/pqueue.c" >update: someone did</a>).</p>
+
+<!--more-->
+
+<p><a href="http://opendatastructures.org/ods-python/10_Heaps.html" >Heaps</a> are a common structure
+for implementing priority queues, being able to both extract the minimum/maximum priority
+element and insert a new element in <code>O(log n)</code>. The typical implementation is an implicit
+complete binary tree embedded within an array, which is simple and has good cache locality.</p>
+
+<p>Normally the root of the heap is present at index 0, with the children of <code>i</code> at <code>2i+1</code>
+and <code>2i+2</code>, and its parent at <code>(i-1)/2</code>. However by leaving index 0 empty and
+indexing the heap from 1, you can simplify these calculations and save a few arithmetic ops.</p>
+
+<p align="center">
+  <img width="460" height="300" src="../static/heap.png">
+</p>
+
+<p>Additionally, if you <code>aligned_alloc</code> the heap array, you may be able to improve cache
+alignment of children. For example, assuming 64-bit integer elements and cache lines, the 8
+great-grandchildren of <code>a[i]</code> at indices <code>a[8i]</code> to <code>a[8i+7]</code> will lie in a single cache
+line as 64 divides <code>8i * 8 bytes</code>. This allows prefetching multiple levels in advance.</p>
+
+<p>Further if you keep the heap capacity as a power of 2, you get a complete binary tree,
+and so the depth of a large heap should be obvious to the branch predictor. Then sifting
+down only needs to check the validity of the right child since either both, or neither are
+valid in a complete tree, which saves several comparisions when popping from the heap
+(this can of course also be done in a 0-indexed heap by leaving the final element empty).</p>
+
+<p>Combining these tricks yields quite a gain in simplicity and theoretically, performance
+(benchmarks later?).</p>
+
+<p>Here's some source code in C for a integer max heap, but the idea should be clear enough.
+Details can be found in my <a href="https://github.com/plisp/dsdump" >collection of algorithms</a></p>
+
+<pre><code><span class="code"><span class="symbol">typedef</span> <span class="symbol">struct</span> heap <span class="paren1">{<span class="code">
+    size_t size, cap;
+    <span class="symbol">long</span> *data;
+</span>}</span> Heap;
+
+Heap *heap_new<span class="paren1">(<span class="code"></span>)</span> <span class="paren1">{<span class="code">
+    <span class="symbol">struct</span> heap *new = malloc<span class="paren2">(<span class="code"><span class="symbol">sizeof</span> *new</span>)</span>;
+    new-&gt;size = 1;
+    new-&gt;cap = 2;
+    <span class="symbol">return</span> new;
+</span>}</span>
+
+<span class="comment">// sifts the element recently pushed to the index heap-&gt;size up as far as possible
+</span><span class="symbol">int</span> sift_down<span class="paren1">(<span class="code">Heap *heap</span>)</span> <span class="paren1">{<span class="code">
+    <span class="symbol">long</span> *a = heap-&gt;data;
+    size_t i = heap-&gt;size, parent = i/2;
+    <span class="comment">//
+</span>    <span class="symbol">while</span> <span class="paren2">(<span class="code">parent &gt; 0 &amp;&amp; a<span class="paren3">[<span class="code">i</span>]</span> &gt; a<span class="paren3">[<span class="code">parent</span>]</span></span>)</span> <span class="paren2">{<span class="code">
+        swap<span class="paren3">(<span class="code">&amp;a<span class="paren4">[<span class="code">i</span>]</span>, &amp;a<span class="paren4">[<span class="code">parent</span>]</span></span>)</span>;
+        i = parent, parent = i/2;
+    </span>}</span>
+</span>}</span>
+
+<span class="symbol">void</span> sift_down<span class="paren1">(<span class="code">Heap *heap</span>)</span> <span class="paren1">{<span class="code">
+    <span class="symbol">long</span> *a = heap-&gt;data;
+    <span class="symbol">for</span> <span class="paren2">(<span class="code">size_t i, max_child = 1, left, right;;</span>)</span> <span class="paren2">{<span class="code">
+        i = max_child;
+        left = i*2, right = i*2 + 1;
+        <span class="symbol">if</span> <span class="paren3">(<span class="code">right &gt;= heap-&gt;size</span>)</span> break;
+        <span class="comment">// swap with larger child &gt; other child
+</span>        max_child = a<span class="paren3">[<span class="code">left</span>]</span> &gt; a<span class="paren3">[<span class="code">right</span>]</span> ? left : right;
+        <span class="symbol">if</span> <span class="paren3">(<span class="code">a<span class="paren4">[<span class="code">max_child</span>]</span> &gt; a<span class="paren4">[<span class="code">i</span>]</span></span>)</span>
+            swap<span class="paren3">(<span class="code">&amp;a<span class="paren4">[<span class="code">max_child</span>]</span>, &amp;a<span class="paren4">[<span class="code">i</span>]</span></span>)</span>;
+        <span class="symbol">else</span> break;
+    </span>}</span>
+</span>}</span></span></code></pre>
+
+<p>More posts to come soon.</p>
+ <ul class="pager"> <li class="previous"><a href="https://plisp.github.io/posts/2020-08-15.html">&larr; Previous</a></li>
+<li class="next"><a href="https://plisp.github.io/posts/Editing-abstraction-not-text.html">Next &rarr;</a></li>
+</ul> </div>
+ </div>  <div class="row-fluid"> <hr> <p class="fineprint">Unless otherwise credited all material <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"> <img alt="Creative Commons License" style="border-width:0" src="https://plisp.github.io/img/cc-by-sa.png" /> </a> by plisp <a id="coleslaw-logo" href="https://github.com/redline6561/coleslaw"> <img src="https://plisp.github.io/img/logo_small.jpg" alt="Coleslaw logo" /></p> </a> </div> </div> </div> </div> <script src="https://plisp.github.io/js/bootstrap.min.js"></script> </body> </html>

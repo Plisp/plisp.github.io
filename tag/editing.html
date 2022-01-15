@@ -11,21 +11,22 @@
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
   })();
 
-</script> </head> <body> <div class="container-fluid"> <div class="row-fluid"> <div class="offset2 span8"> <div class="row-fluid"> <div class="navbar navbar-inverse"> <div class="navbar-inner"> <a class="brand" href="https://plisp.github.io">(gensym)</a> <ul class="nav"> <li> <a href="http://github.com/plisp">Github</a> </li> </ul> </div> </div> </div> <div class="row-fluid"> <h1 class="page-header">Content tagged editing</h1> <div class="row-fluid"> <h1><a href="https://plisp.github.io/posts/Editing-abstraction-not-text.html">Editing abstraction not text</a></h1> <p class="date-posted">posted on 2021-11-29 10:24:59</p> <p>So I started off writing a <a href="https://github.com/Plisp/vico" >text editor</a>
-that would suit my needs: being fully extensible via a scripting language <strong>and</strong> performant.
-Along the way I devised <a href="https://github.com/Plisp/libst" >an improvement</a> on the
-<a href="https://en.wikipedia.org/wiki/Piece_table" >piece-table</a>
-which significantly outperforms all existing similar data structures to my knowledge.
-There was a small caveat to my particular implementation - it exploited the
-fact that codepoint and line number tracking are not crucial in the backend of a
-text editor (details in paper), meaning much of the file did not need to be read with expensive
-system calls, instead lazily loaded by the operating system's virtual memory subsystem.</p>
+</script> </head> <body> <div class="container-fluid"> <div class="row-fluid"> <div class="offset2 span8"> <div class="row-fluid"> <div class="navbar navbar-inverse"> <div class="navbar-inner"> <a class="brand" href="https://plisp.github.io">(gensym)</a> <ul class="nav"> <li> <a href="http://github.com/plisp">Github</a> </li> </ul> </div> </div> </div> <div class="row-fluid"> <h1 class="page-header">Content tagged editing date: 2021-11-29 10:24:59</h1> <div class="row-fluid"> <h1><a href="https://plisp.github.io/posts/Editing-abstraction-not-text-updated.html">Editing abstraction not text (updated)</a></h1> <p class="date-posted">posted on </p> <p>So I started off writing a <a href="https://github.com/Plisp/vico" >text editor</a> that would suit
+my needs: being fully extensible via a scripting language <strong>and</strong> performant.  Along the
+way I devised <a href="https://github.com/Plisp/libst" >an improvement</a> on the
+<a href="https://en.wikipedia.org/wiki/Piece_table" >piece-table</a> which significantly outperforms
+all existing similar data structures to my knowledge.  There was a small caveat to my
+particular implementation - it exploited the fact that codepoint and line number tracking
+are not crucial in the backend of a text editor (details in paper), meaning much of the
+file did not need to be read with expensive system calls, instead lazily loaded by the
+operating system's virtual memory subsystem.</p>
 
 <p>Arguably at that point my implementation was not exactly comparable to others since I was
-no longer providing the same abstract interface as typical text buffers. But the key insight
-is that bytes, codepoints and lines are simply not the units in which we percieve code.</p>
+no longer providing the same abstract interface as typical text buffers. But the key
+insight is that bytes, codepoints and lines are simply not the units in which we percieve
+code.</p>
 
-<p>When designing a development environment, I think a good premise is that not everything is text,
-just as <a href="https://www.youtube.com/watch?v=9-IWMbJXoLM" >not everything is a file</a>.</p>
+<p>When designing a development environment, I think a good premise is that not everything
+is text, just as <a href="https://www.youtube.com/watch?v=9-IWMbJXoLM" >not everything is a file</a>.</p>
 
- </div> <div id="relative-nav"> <ul class="pager">   </ul> </div> <div class="row-fluid"> <p>This blog covers <a href="https://plisp.github.io/tag/meta.html">meta</a>, <a href="https://plisp.github.io/tag/editing.html">editing</a>, <a href="https://plisp.github.io/tag/data-structures.html">data-structures</a> </p> </div> <div class="row-fluid"> <p>View content from <a href="https://plisp.github.io/date/2020-08.html">2020-08</a>, <a href="https://plisp.github.io/date/2021-08.html">2021-08</a>, <a href="https://plisp.github.io/date/2021-11.html">2021-11</a> </p> </div> </div>  <div class="row-fluid"> <hr> <p class="fineprint">Unless otherwise credited all material <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"> <img alt="Creative Commons License" style="border-width:0" src="https://plisp.github.io/img/cc-by-sa.png" /> </a> by plisp <a id="coleslaw-logo" href="https://github.com/redline6561/coleslaw"> <img src="https://plisp.github.io/img/logo_small.jpg" alt="Coleslaw logo" /></p> </a> </div> </div> </div> </div> <script src="https://plisp.github.io/js/bootstrap.min.js"></script> </body> </html>
+ </div> <div id="relative-nav"> <ul class="pager">   </ul> </div> <div class="row-fluid"> <p>This blog covers <a href="https://plisp.github.io/tag/data-structures.html">data-structures</a>, <a href="https://plisp.github.io/tag/editing-date-2021-11-29-102459.html">editing date: 2021-11-29 10:24:59</a>, <a href="https://plisp.github.io/tag/meta.html">meta</a> </p> </div> <div class="row-fluid"> <p>View content from <a href="https://plisp.github.io/date/2021-08.html">2021-08</a>, <a href="https://plisp.github.io/date/2020-08.html">2020-08</a> </p> </div> </div>  <div class="row-fluid"> <hr> <p class="fineprint">Unless otherwise credited all material <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"> <img alt="Creative Commons License" style="border-width:0" src="https://plisp.github.io/img/cc-by-sa.png" /> </a> by plisp <a id="coleslaw-logo" href="https://github.com/redline6561/coleslaw"> <img src="https://plisp.github.io/img/logo_small.jpg" alt="Coleslaw logo" /></p> </a> </div> </div> </div> </div> <script src="https://plisp.github.io/js/bootstrap.min.js"></script> </body> </html>

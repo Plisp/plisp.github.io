@@ -78,22 +78,24 @@ consciousness...  Given a database of types, function definitions, variables and
 it is possible to:
 
 * provide scripting of highlighting modes, emphasizing particular variables, mutations
-and accurate conventional semantic highlighting of keywords, types, etc.  * incremental
-static analysis * augmenting hardcoded snippets, dynamically provide completion of valid
-control flow constructs * edit structurally, eliminating syntax errors * edit/view
-alternate visual representations: C like python without extraneous braces and semicolons,
-or even scratch (cursed), edit math equations typeset inline with latex
+and accurate conventional semantic highlighting of keywords, types, etc.
+* incremental static analysis
+* augmenting hardcoded snippets, dynamically provide completion of valid control flow constructs
+* edit structurally, eliminating syntax errors
+* edit alternate visual 'projections' of a code model: C like python without extraneous braces and semicolons,
+or even scratch (cursed), edit math equations typeset inline with latex, color pickers for rgb values...
 
 <p align="center"> <img src="../static/cpython.png"> </p>
 
 * write code generating macros in the scripting language of the editor rather than the
-programming language (more on this in future posts) * execute code in a REPL: live within
-the editor without waiting for a full recompilation * track memory allocations, detecting
-accesses out of bounds and identifying their source without leaving the editor and
-running valgrind * debug by richly inspecting state and directly redefining functions *
-generate a control flow graph leading up to a debugger crash, displaying values of
-variables involved at each branch (debug printing but automatic) or better: * reverse
-time by undoing observable side-effecting code (external routines like i/o are harder to
+programming language (more on this in future posts)
+* execute code in a REPL: live within the editor without waiting for a full recompilation
+* track memory allocations, detecting accesses out of bounds and identifying their source without leaving the editor and
+running valgrind
+* debug by richly inspecting state and directly redefining functions
+* generate a control flow graph leading up to a debugger crash, displaying values of
+variables involved at each branch (debug printing but automatic) or better:
+  * reverse time by undoing observable side-effecting code (external routines like i/o are harder to
 deal with, this might be possible if the OS was designed around persistence)
 
 Now some of these may be theoretically possible in a modern IDE, but with structural

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<feed xmlns="http://www.w3.org/2005/Atom"> <title>(gensym)</title> <link href="https://plisp.github.io"/> <link type="application/atom+xml" rel="self" href="https://plisp.github.io/atom.xml"/> <updated>Sat, 15 Jan 2022 02:56:31 +0000</updated> <author> <name>plisp</name> </author> <entry> <link type="text/html" rel="alternate" href="https://plisp.github.io/posts/Editing-abstraction-not-text-updated.html"/> <title>Editing abstraction not text (updated)</title> <published></published> <updated></updated> <author> <name>plisp</name> <uri>https://plisp.github.io</uri> </author> <content type="html">&lt;p&gt;So I started off writing a &lt;a href=&quot;https://github.com/Plisp/vico&quot; &gt;text editor&lt;/a&gt; that would suit
+<feed xmlns="http://www.w3.org/2005/Atom"> <title>(gensym)</title> <link href="https://plisp.github.io"/> <link type="application/atom+xml" rel="self" href="https://plisp.github.io/atom.xml"/> <updated>Sun, 16 Jan 2022 04:42:05 +0000</updated> <author> <name>plisp</name> </author> <entry> <link type="text/html" rel="alternate" href="https://plisp.github.io/posts/Editing-abstraction-not-text-updated.html"/> <title>Editing abstraction not text (updated)</title> <published></published> <updated></updated> <author> <name>plisp</name> <uri>https://plisp.github.io</uri> </author> <content type="html">&lt;p&gt;So I started off writing a &lt;a href=&quot;https://github.com/Plisp/vico&quot; &gt;text editor&lt;/a&gt; that would suit
 my needs: being fully extensible via a scripting language &lt;strong&gt;and&lt;/strong&gt; performant.  Along the
 way I devised &lt;a href=&quot;https://github.com/Plisp/libst&quot; &gt;an improvement&lt;/a&gt; on the
 &lt;a href=&quot;https://en.wikipedia.org/wiki/Piece_table&quot; &gt;piece-table&lt;/a&gt; which significantly outperforms
@@ -72,24 +72,26 @@ it is possible to:&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;provide scripting of highlighting modes, emphasizing particular variables, mutations
-and accurate conventional semantic highlighting of keywords, types, etc.  * incremental
-static analysis * augmenting hardcoded snippets, dynamically provide completion of valid
-control flow constructs * edit structurally, eliminating syntax errors * edit/view
-alternate visual representations: C like python without extraneous braces and semicolons,
-or even scratch (cursed), edit math equations typeset inline with latex&lt;/li&gt;
+and accurate conventional semantic highlighting of keywords, types, etc.&lt;/li&gt;
+&lt;li&gt;incremental static analysis&lt;/li&gt;
+&lt;li&gt;augmenting hardcoded snippets, dynamically provide completion of valid control flow constructs&lt;/li&gt;
+&lt;li&gt;edit structurally, eliminating syntax errors&lt;/li&gt;
+&lt;li&gt;edit alternate visual &#039;projections&#039; of a code model: C like python without extraneous braces and semicolons,
+or even scratch (cursed), edit math equations typeset inline with latex, color pickers for rgb values...&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p align=&quot;center&quot;&gt; &lt;img src=&quot;../static/cpython.png&quot;&gt; &lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;write code generating macros in the scripting language of the editor rather than the
-programming language (more on this in future posts) * execute code in a REPL: live within
-the editor without waiting for a full recompilation * track memory allocations, detecting
-accesses out of bounds and identifying their source without leaving the editor and
-running valgrind * debug by richly inspecting state and directly redefining functions *
-generate a control flow graph leading up to a debugger crash, displaying values of
-variables involved at each branch (debug printing but automatic) or better: * reverse
-time by undoing observable side-effecting code (external routines like i/o are harder to
+programming language (more on this in future posts)&lt;/li&gt;
+&lt;li&gt;execute code in a REPL: live within the editor without waiting for a full recompilation&lt;/li&gt;
+&lt;li&gt;track memory allocations, detecting accesses out of bounds and identifying their source without leaving the editor and
+running valgrind&lt;/li&gt;
+&lt;li&gt;debug by richly inspecting state and directly redefining functions&lt;/li&gt;
+&lt;li&gt;generate a control flow graph leading up to a debugger crash, displaying values of
+variables involved at each branch (debug printing but automatic) or better:&lt;/li&gt;
+&lt;li&gt;reverse time by undoing observable side-effecting code (external routines like i/o are harder to
 deal with, this might be possible if the OS was designed around persistence)&lt;/li&gt;
 &lt;/ul&gt;
 

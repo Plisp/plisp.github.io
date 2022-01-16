@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>(gensym)</title> <link>https://plisp.github.io</link> <atom:link href="https://plisp.github.io/rss.xml" rel="self" type="application/rss+xml" /> <language>en-us</language> <pubDate>Sat, 15 Jan 2022 02:56:31 +0000</pubDate> <item> <title>Editing abstraction not text (updated)</title> <link>https://plisp.github.io/posts/Editing-abstraction-not-text-updated.html</link> <pubDate></pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io/posts/Editing-abstraction-not-text-updated.html</guid> <category><![CDATA[ editing date: 2021-11-29 10:24:59 ]]></category> <description><![CDATA[ <p>So I started off writing a <a href="https://github.com/Plisp/vico" >text editor</a> that would suit
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>(gensym)</title> <link>https://plisp.github.io</link> <atom:link href="https://plisp.github.io/rss.xml" rel="self" type="application/rss+xml" /> <language>en-us</language> <pubDate>Sun, 16 Jan 2022 04:42:05 +0000</pubDate> <item> <title>Editing abstraction not text (updated)</title> <link>https://plisp.github.io/posts/Editing-abstraction-not-text-updated.html</link> <pubDate></pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io/posts/Editing-abstraction-not-text-updated.html</guid> <category><![CDATA[ editing date: 2021-11-29 10:24:59 ]]></category> <description><![CDATA[ <p>So I started off writing a <a href="https://github.com/Plisp/vico" >text editor</a> that would suit
 my needs: being fully extensible via a scripting language <strong>and</strong> performant.  Along the
 way I devised <a href="https://github.com/Plisp/libst" >an improvement</a> on the
 <a href="https://en.wikipedia.org/wiki/Piece_table" >piece-table</a> which significantly outperforms
@@ -72,24 +72,26 @@ it is possible to:</p>
 
 <ul>
 <li>provide scripting of highlighting modes, emphasizing particular variables, mutations
-and accurate conventional semantic highlighting of keywords, types, etc.  * incremental
-static analysis * augmenting hardcoded snippets, dynamically provide completion of valid
-control flow constructs * edit structurally, eliminating syntax errors * edit/view
-alternate visual representations: C like python without extraneous braces and semicolons,
-or even scratch (cursed), edit math equations typeset inline with latex</li>
+and accurate conventional semantic highlighting of keywords, types, etc.</li>
+<li>incremental static analysis</li>
+<li>augmenting hardcoded snippets, dynamically provide completion of valid control flow constructs</li>
+<li>edit structurally, eliminating syntax errors</li>
+<li>edit alternate visual 'projections' of a code model: C like python without extraneous braces and semicolons,
+or even scratch (cursed), edit math equations typeset inline with latex, color pickers for rgb values...</li>
 </ul>
 
 <p align="center"> <img src="../static/cpython.png"> </p>
 
 <ul>
 <li>write code generating macros in the scripting language of the editor rather than the
-programming language (more on this in future posts) * execute code in a REPL: live within
-the editor without waiting for a full recompilation * track memory allocations, detecting
-accesses out of bounds and identifying their source without leaving the editor and
-running valgrind * debug by richly inspecting state and directly redefining functions *
-generate a control flow graph leading up to a debugger crash, displaying values of
-variables involved at each branch (debug printing but automatic) or better: * reverse
-time by undoing observable side-effecting code (external routines like i/o are harder to
+programming language (more on this in future posts)</li>
+<li>execute code in a REPL: live within the editor without waiting for a full recompilation</li>
+<li>track memory allocations, detecting accesses out of bounds and identifying their source without leaving the editor and
+running valgrind</li>
+<li>debug by richly inspecting state and directly redefining functions</li>
+<li>generate a control flow graph leading up to a debugger crash, displaying values of
+variables involved at each branch (debug printing but automatic) or better:</li>
+<li>reverse time by undoing observable side-effecting code (external routines like i/o are harder to
 deal with, this might be possible if the OS was designed around persistence)</li>
 </ul>
 

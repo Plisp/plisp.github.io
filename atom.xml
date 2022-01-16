@@ -1,5 +1,103 @@
 <?xml version="1.0"?>
-<feed xmlns="http://www.w3.org/2005/Atom"> <title>(gensym)</title> <link href="https://plisp.github.io"/> <link type="application/atom+xml" rel="self" href="https://plisp.github.io/atom.xml"/> <updated>Sun, 16 Jan 2022 04:42:05 +0000</updated> <author> <name>plisp</name> </author> <entry> <link type="text/html" rel="alternate" href="https://plisp.github.io/posts/Editing-abstraction-not-text-updated.html"/> <title>Editing abstraction not text (updated)</title> <published></published> <updated></updated> <author> <name>plisp</name> <uri>https://plisp.github.io</uri> </author> <content type="html">&lt;p&gt;So I started off writing a &lt;a href=&quot;https://github.com/Plisp/vico&quot; &gt;text editor&lt;/a&gt; that would suit
+<feed xmlns="http://www.w3.org/2005/Atom"> <title>(gensym)</title> <link href="https://plisp.github.io"/> <link type="application/atom+xml" rel="self" href="https://plisp.github.io/atom.xml"/> <updated>Sun, 16 Jan 2022 09:10:36 +0000</updated> <author> <name>plisp</name> </author> <entry> <link type="text/html" rel="alternate" href="https://plisp.github.io/posts/Terminals-ARE-NOT-GUI.html"/> <title>Terminals ARE NOT GUI</title> <published>2022-01-16 16:02:09</published> <updated>2022-01-16 16:02:09</updated> <author> <name>plisp</name> <uri>https://plisp.github.io</uri> </author> <content type="html">&lt;p&gt;Unless you&#039;re dealing solely with ascii, which is typically a naive assumption in our 
+Unicode world and &lt;em&gt;especially&lt;/em&gt; in the realm of text editing widgets, terminal emulators
+should be avoided for the dusty VT100 relics they are.&lt;/p&gt;
+
+&lt;p&gt;Not only is input handling unbelievably botched, consistent text rendering
+is impossible across terminals.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;p&gt;To understand the unfixable brokenness we must look inside the terminal:&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt; &lt;img src=&quot;../static/terminal.jpeg&quot;&gt; &lt;/p&gt;
+
+&lt;p&gt;The original terminals were physical devices capable of displaying a simple
+grid of characters, and so the textual terminal interfaces developed mapped
+elegantly to the displays of the time (much prior to Unicode).
+However when true GUI caught on, this design meant terminal drivers needed to be
+developed with the sole purpose of emulating a physical terminal to support shells
+and other programs predating graphical environments, which relied on line buffering
+and catching special characters such as ctrl+c.
+A UNIXy kernel typically exposes this functionality
+through pseudoterminals (PTYs), where bytes written between the
+graphical terminal emulator and program can be first mediated by the OS driver.&lt;/p&gt;
+
+&lt;p&gt;Ironically &amp;quot;terminal user interfaces&amp;quot; of course immediately disable the kernel&#039;s
+line buffering and control character processing on startup to regain full control
+over user input - you may notice ctrl+c doesn&#039;t cause the &lt;code&gt;vim&lt;/code&gt; editor to
+terminate as batch programs do.&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt; &lt;img src=&quot;../static/pty.png&quot;&gt; &lt;/p&gt;
+
+&lt;p&gt;Upon launching a shell program, its standard input/output are connected to the
+terminal emulator through the kernel via a pty, allowing the madness to begin.&lt;/p&gt;
+
+&lt;p&gt;To see what I mean, run &lt;code&gt;script&lt;/code&gt; to start a recursive shell session where input
+will be logged to a file called &lt;code&gt;typescript&lt;/code&gt; in the current working directory.
+Launch any &#039;graphical&#039; terminal program, exit and ctrl+d to return to your original
+shell. Opening &lt;code&gt;typescript&lt;/code&gt; with a reliable text editor you see...
+an absolutely incomprehensible mess of seemingly random characters.&lt;/p&gt;
+
+&lt;p&gt;You may have heard of these strings as terminal escape codes, which precisely
+reflected my urge after developing a &lt;a href=&quot;https://github.com/Plisp/uncursed&quot; &gt;TUI library&lt;/a&gt;.
+These unseen sequences are copied between the terminal emulator and TUI program through the pty,
+mediating both user input reporting and &#039;graphical&#039; commands
+like &#039;clear the screen&#039; or &#039;set the drawing color to flashing red&#039;.&lt;/p&gt;
+
+&lt;p&gt;Where are these sequences defined? Prepare yourself and run &lt;code&gt;infocmp&lt;/code&gt; in a shell.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;xterm|xterm terminal emulator (X Window System),
+        am, bce, km, mc5i, mir, msgr, npc, xenl,
+        colors#8, cols#80, it#8, lines#24, pairs#64,
+        acsc=``aaffggiijjkkllmmnnooppqqrrssttuuvvwwxxyyzz{{||}}~~,
+        bel=^G, blink=\E[5m, bold=\E[1m, cbt=\E[Z, civis=\E[?25l,
+        clear=\E[H\E[2J, cnorm=\E[?12l\E[?25h, cr=\r,
+        csr=\E[%i%p1%d;%p2%dr, cub=\E[%p1%dD, cub1=^H,
+        cud=\E[%p1%dB, cud1=\n, cuf=\E[%p1%dC, cuf1=\E[C,
+        cup=\E[%i%p1%d;%p2%dH, cuu=\E[%p1%dA, cuu1=\E[A,
+        cvvis=\E[?12;25h, dch=\E[%p1%dP, dch1=\E[P, dim=\E[2m,
+        ......&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You might notice some of these sequences were the same codes from &lt;code&gt;script&lt;/code&gt; earlier.
+Also note that these sequences are specific to a certain terminal emulator type,
+in this case &lt;code&gt;xterm&lt;/code&gt;. There&#039;s a whole directory somewhere filled with repeated
+descriptions for dozens of terminal types, most of which you will certainly never need.
+In fact, many terminals have outdated terminfo descriptions or lie that
+&lt;code&gt;TERM=xterm-256color&lt;/code&gt;, which makes writing a library wrapper
+&lt;a href=&quot;https://github.com/neovim/neovim/blob/a0201b6ed37bae594bd0db2804c8ecff09a29e0e/src/nvim/tui/tui.c#L1585&quot; &gt;uniquely painful&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Fortunately you&#039;ve probably got a fun terminal library wrapper so you don&#039;t need
+to worry right?&lt;/p&gt;
+
+&lt;p&gt;Well... not quite. Half the keys when modified, and especially mouse events will
+simply not be reported by the terminal emulator due to &lt;a href=&quot;https://invisible-island.net/xterm/modified-keys.html&quot; &gt;legacy encoding issues&lt;/a&gt;.
+On top of that displaying things is generally still your problem, and the only
+graphical primitive available to you is sending text through what&#039;s essentially a pipe.
+Because you&#039;re copying text in and out of the kernel, as well as waiting on slow
+terminals to parse color control sequences, it&#039;s common to observe screen tearing
+if your library &lt;em&gt;coughs and ncurses&lt;/em&gt; fails to optimize output properly.
+For those morbidly curious, this involves
+insanity such as batch-drawing things with the same color to avoid outputting long
+color-changing sequences and minimising movement of the terminal cursor - the only location
+where text can be drawn on the screen.&lt;/p&gt;
+
+&lt;p&gt;But there&#039;s more!&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt; &lt;img src=&quot;../static/terminals.png&quot;&gt; &lt;/p&gt;
+
+&lt;p&gt;The concept of a character&#039;s display width is not well defined with terminals,
+accustomed to a grid of monospace ascii characters, and so
+no terminal emulator in existence can render wide and combining characters
+&lt;a href=&quot;https://github.com/Plisp/wcwidth-comparision&quot; &gt;consistently&lt;/a&gt; though alacritty seems
+to come close. This reflects another lack of standardization which means no TUI 
+can draw emojis in a consistent way.&lt;/p&gt;
+
+&lt;h2&gt;deep breath and conclusion&lt;/h2&gt;
+
+&lt;p&gt;While the shell is handy for opaque textual command pipelines, programs needing
+real user interaction should be implemented in something sane like SDL.&lt;/p&gt;
+</content> </entry><entry> <link type="text/html" rel="alternate" href="https://plisp.github.io/posts/Editing-abstraction-not-text-updated.html"/> <title>Editing abstraction not text (updated)</title> <published>2021-11-29 10:24:59</published> <updated>2021-11-29 10:24:59</updated> <author> <name>plisp</name> <uri>https://plisp.github.io</uri> </author> <content type="html">&lt;p&gt;So I started off writing a &lt;a href=&quot;https://github.com/Plisp/vico&quot; &gt;text editor&lt;/a&gt; that would suit
 my needs: being fully extensible via a scripting language &lt;strong&gt;and&lt;/strong&gt; performant.  Along the
 way I devised &lt;a href=&quot;https://github.com/Plisp/libst&quot; &gt;an improvement&lt;/a&gt; on the
 &lt;a href=&quot;https://en.wikipedia.org/wiki/Piece_table&quot; &gt;piece-table&lt;/a&gt; which significantly outperforms

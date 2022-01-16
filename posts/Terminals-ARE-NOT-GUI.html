@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en"> <head> <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> <title>(gensym)</title> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <link href="https://plisp.github.io/css/bootstrap.min.css" rel="stylesheet" media="screen"> <link href="https://plisp.github.io/css/custom.css" rel="stylesheet" media="screen"> <link rel="alternate" href="https://plisp.github.io/rss.xml" type="application/rss+xml" /> <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'foo']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script> </head> <body> <div class="container-fluid"> <div class="row-fluid"> <div class="offset2 span8"> <div class="row-fluid"> <div class="navbar navbar-inverse"> <div class="navbar-inner"> <a class="brand" href="https://plisp.github.io">(gensym)</a> <ul class="nav"> <li> <a href="http://github.com/plisp">Github</a> </li> </ul> </div> </div> </div> <div class="row-fluid"> <div class="row-fluid">
+<h1 class="page-header">Terminals ARE NOT GUI</h1>
+<p> Tagged as <a href="https://plisp.github.io/tag/terminals.html">terminals</a> </p> <p class="date-posted"> Written on 2022-01-16 16:02:09 </p> <p>Unless you're dealing solely with ascii, which is typically a naive assumption in our 
+Unicode world and <em>especially</em> in the realm of text editing widgets, terminal emulators
+should be avoided for the dusty VT100 relics they are.</p>
+
+<p>Not only is input handling unbelievably botched, consistent text rendering
+is impossible across terminals.</p>
+
+<!--more-->
+
+<p>To understand the unfixable brokenness we must look inside the terminal:</p>
+
+<p align="center"> <img src="../static/terminal.jpeg"> </p>
+
+<p>The original terminals were physical devices capable of displaying a simple
+grid of characters, and so the textual terminal interfaces developed mapped
+elegantly to the displays of the time (much prior to Unicode).
+However when true GUI caught on, this design meant terminal drivers needed to be
+developed with the sole purpose of emulating a physical terminal to support shells
+and other programs predating graphical environments, which relied on line buffering
+and catching special characters such as ctrl+c.
+A UNIXy kernel typically exposes this functionality
+through pseudoterminals (PTYs), where bytes written between the
+graphical terminal emulator and program can be first mediated by the OS driver.</p>
+
+<p>Ironically &quot;terminal user interfaces&quot; of course immediately disable the kernel's
+line buffering and control character processing on startup to regain full control
+over user input - you may notice ctrl+c doesn't cause the <code>vim</code> editor to
+terminate as batch programs do.</p>
+
+<p align="center"> <img src="../static/pty.png"> </p>
+
+<p>Upon launching a shell program, its standard input/output are connected to the
+terminal emulator through the kernel via a pty, allowing the madness to begin.</p>
+
+<p>To see what I mean, run <code>script</code> to start a recursive shell session where input
+will be logged to a file called <code>typescript</code> in the current working directory.
+Launch any 'graphical' terminal program, exit and ctrl+d to return to your original
+shell. Opening <code>typescript</code> with a reliable text editor you see...
+an absolutely incomprehensible mess of seemingly random characters.</p>
+
+<p>You may have heard of these strings as terminal escape codes, which precisely
+reflected my urge after developing a <a href="https://github.com/Plisp/uncursed" >TUI library</a>.
+These unseen sequences are copied between the terminal emulator and TUI program through the pty,
+mediating both user input reporting and 'graphical' commands
+like 'clear the screen' or 'set the drawing color to flashing red'.</p>
+
+<p>Where are these sequences defined? Prepare yourself and run <code>infocmp</code> in a shell.</p>
+
+<pre><code>xterm|xterm terminal emulator (X Window System),
+        am, bce, km, mc5i, mir, msgr, npc, xenl,
+        colors#8, cols#80, it#8, lines#24, pairs#64,
+        acsc=``aaffggiijjkkllmmnnooppqqrrssttuuvvwwxxyyzz{{||}}~~,
+        bel=^G, blink=\E[5m, bold=\E[1m, cbt=\E[Z, civis=\E[?25l,
+        clear=\E[H\E[2J, cnorm=\E[?12l\E[?25h, cr=\r,
+        csr=\E[%i%p1%d;%p2%dr, cub=\E[%p1%dD, cub1=^H,
+        cud=\E[%p1%dB, cud1=\n, cuf=\E[%p1%dC, cuf1=\E[C,
+        cup=\E[%i%p1%d;%p2%dH, cuu=\E[%p1%dA, cuu1=\E[A,
+        cvvis=\E[?12;25h, dch=\E[%p1%dP, dch1=\E[P, dim=\E[2m,
+        ......</code></pre>
+
+<p>You might notice some of these sequences were the same codes from <code>script</code> earlier.
+Also note that these sequences are specific to a certain terminal emulator type,
+in this case <code>xterm</code>. There's a whole directory somewhere filled with repeated
+descriptions for dozens of terminal types, most of which you will certainly never need.
+In fact, many terminals have outdated terminfo descriptions or lie that
+<code>TERM=xterm-256color</code>, which makes writing a library wrapper
+<a href="https://github.com/neovim/neovim/blob/a0201b6ed37bae594bd0db2804c8ecff09a29e0e/src/nvim/tui/tui.c#L1585" >uniquely painful</a>.</p>
+
+<p>Fortunately you've probably got a fun terminal library wrapper so you don't need
+to worry right?</p>
+
+<p>Well... not quite. Half the keys when modified, and especially mouse events will
+simply not be reported by the terminal emulator due to <a href="https://invisible-island.net/xterm/modified-keys.html" >legacy encoding issues</a>.
+On top of that displaying things is generally still your problem, and the only
+graphical primitive available to you is sending text through what's essentially a pipe.
+Because you're copying text in and out of the kernel, as well as waiting on slow
+terminals to parse color control sequences, it's common to observe screen tearing
+if your library <em>coughs and ncurses</em> fails to optimize output properly.
+For those morbidly curious, this involves
+insanity such as batch-drawing things with the same color to avoid outputting long
+color-changing sequences and minimising movement of the terminal cursor - the only location
+where text can be drawn on the screen.</p>
+
+<p>But there's more!</p>
+
+<p align="center"> <img src="../static/terminals.png"> </p>
+
+<p>The concept of a character's display width is not well defined with terminals,
+accustomed to a grid of monospace ascii characters, and so
+no terminal emulator in existence can render wide and combining characters
+<a href="https://github.com/Plisp/wcwidth-comparision" >consistently</a> though alacritty seems
+to come close. This reflects another lack of standardization which means no TUI 
+can draw emojis in a consistent way.</p>
+
+<h2>deep breath and conclusion</h2>
+
+<p>While the shell is handy for opaque textual command pipelines, programs needing
+real user interaction should be implemented in something sane like SDL.</p>
+ <ul class="pager"> <li class="previous"><a href="https://plisp.github.io/posts/Editing-abstraction-not-text-updated.html">&larr; Previous</a></li>
+
+</ul> </div>
+ </div>  <div class="row-fluid"> <hr> <p class="fineprint">Unless otherwise credited all material <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"> <img alt="Creative Commons License" style="border-width:0" src="https://plisp.github.io/img/cc-by-sa.png" /> </a> by plisp <a id="coleslaw-logo" href="https://github.com/redline6561/coleslaw"> <img src="https://plisp.github.io/img/logo_small.jpg" alt="Coleslaw logo" /></p> </a> </div> </div> </div> </div> <script src="https://plisp.github.io/js/bootstrap.min.js"></script> </body> </html>

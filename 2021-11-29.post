@@ -96,8 +96,6 @@ running valgrind
 * debug by richly inspecting state and directly redefining functions
 * generate a control flow graph leading up to a debugger crash, displaying values of
 variables involved at each branch (debug printing but automatic) or better:
-  * reverse time by undoing observable side-effecting code (external routines like i/o are harder to
-deal with, this might be possible if the OS was designed around persistence)
 
 Now some of these may be theoretically possible in a modern IDE, but with structural
 editing operations that operate on the ASG while keeping it valid (possibly with

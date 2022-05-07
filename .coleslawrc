@@ -20,7 +20,7 @@
            ;;(disqus :shortname "my-site-name")
            ;(incremental)  ;; *Remove comment to enable incremental builds.
            (mathjax)
-           (sitemap)
+           ;;(sitemap)
            (static-pages)
            ;; deployment plugins
            ;; deployment to github pages

@@ -55,7 +55,7 @@ Heap *heap_new() {
 }
 
 // sifts the element recently pushed to the index heap->size up as far as possible
-int sift_down(Heap *heap) {
+int sift_up(Heap *heap) {
   	long *a = heap->data;
 	size_t i = heap->size, parent = i/2;
 	//

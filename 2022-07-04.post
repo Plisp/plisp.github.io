@@ -1,0 +1,123 @@
+;;;;;
+title: Intro to fuzzing with AFL
+tags: data-structures, fuzzing
+date: 2022-07-04 14:31:44
+format: md
+;;;;;
+
+Fuzzing is essentially testing code with lots random inputs to hopefully get a crash if the code is incorrect.
+
+AFL (American Fuzzy Lop) is a bit smarter than the average jank script though, being a *genetic* fuzzer which uses the compiler's knowledge of branches (`if`/`while`) in your code to aggressively seek out more paths through your code, keeping "interesting" inputs for further mutation in some loose analogy to evolutionary success. This also takes some extra setup, but is
+[extremely](https://www.sqlite.org/src/info/a59ae93ee990a55)
+[effective](https://marc.info/?l=openssl-dev&m=145890788100691&w=2)
+in practice for finding elusive bugs.
+
+<!--more-->
+
+<p align="center"> <img src="../static/afl-lop.png"> </p>
+
+## Setup
+
+First grab the [code](https://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz),
+extract it using `tar xf afl-latest.tgz` and compile it with a single `make` in the source directory.
+
+```sh
+$ tar xf afl-latest.tgz
+
+$ cd afl-2.52b # or whatever version you get
+
+$ ls
+Makefile             afl-cmin       afl-tmin.c    docs          qemu_mode
+QuickStartGuide.txt  afl-fuzz.c     afl-whatsup   experimental  test-instr.c
+README               afl-gcc.c      alloc-inl.h   hash.h        testcases
+afl-analyze.c        afl-gotcpu.c   config.h      libdislocator types.h
+afl-as.c             afl-plot       debug.h       libtokencap
+afl-as.h             afl-showmap.c  dictionaries  llvm_mode
+
+$ make
+[*] Checking for the ability to compile x86 code...
+[+] Everything seems to be working, ready to compile.
+...
+```
+
+The next step is to write a test program which reads from standard input and accepts a number of operations which you're interested in testing, and crashes if anything is wrong with your data using `assert`. A good way to do this when data structures are involved is to create a trivial inefficient
+reference implementation which can be compared against the real one after each input command.
+
+Here's a sample session from the Set code I was testing - note I inputted everything after the `>` prompts.
+
+```
+>s
+Set:{0} cur item:0
+ref:{0} cur item:0, i:0, dead:0
+>+1
+>s
+Set:{0, 59} cur item:0
+ref:{0, 59} cur item:0, i:0, dead:0
+>>
+>s
+Set:{0, 59} cur item:59
+ref:{0, 59} cur item:59, i:1, dead:0
+>f 40
+item 142, set 59, d: 59
+>c 40
+item 142, set -2147483648, d: -2147483648
+```
+
+Test it a little manually to make sure your reference works and then create a directory to
+store some sample inputs in. I called it `cases` and put a couple commands in like this:
+
+```
+$ cat cases/test
++ 420
++ 12
+s
+n
+>
+q
+f 3
+c 0
+```
+
+Now let the fuzzer install its branch tracking code in the binary by compiling your program with:
+
+```
+$ AFL_HARDEN=1 afl-clang -fsanitize=undefined -fsanitize-undefined-trap-on-error [files/flags...]
+```
+
+This additionally enables clean crashes on subtle buffer overflows and undefined behavior issues.
+
+## Fuzzing
+
+Now debugging with a clever fuzzer is like a game, where you have to fix bugs found by an AI
+determined to break your code. It can be pretty rewarding!
+
+To start, run
+```
+$ afl-fuzz -i cases -o output-dir ./program
+```
+and some cool colorful information should appear... and oh no there's a crash?
+
+<p align="center"> <img src="../static/afl-fail.png"> </p>
+
+Immediately stop the fuzzing with control+c and ask AFL to *minimise* the failure case using heuristics:
+
+```
+$ afl-tmin -i output/crashes/id\:000000\,sig\:06\,src\:000000\,op\:havoc\,rep\:16 -o case -- ./a.out
+```
+
+Outputting a reduced input sample into `case` which will make your program crash - you may need
+to tab complete in `output/crashes` to choose a test case. Now you can debug the issue by examining the program in a debugger or editor. Then, recompile with your fixes and repeat, until the
+`cycles done` in the top right of the interface is yellow (preferably green, but in my experience
+AFL finds bugs in simple programs within minutes).
+
+I personally find this workflow more satisfying and effective than collecting a large corpus of
+failure cases, as a single error in code can lead to many related issues which can be fixed in
+one go. Of course, you might lose some fuzzing progress, but that's usually not a consideration
+unless fuzzing some large project.
+
+## Conclusion
+Genetic fuzzing with AFL often finds very elusive bugs which are difficult to detect without
+a formal proof of code correctness, which can be somewhat error-prone in itself. Combined with
+tools that can trigger crashes early, the combination can be a lifesaver especially when writing C.
+
+Good luck and happy fuzzing!

@@ -7,14 +7,14 @@ format: md
 
 Fuzzing is essentially testing code with lots random inputs to hopefully get a crash if the code is incorrect.
 
-AFL (American Fuzzy Lop) is a bit smarter than the average jank script though, being a *genetic* fuzzer which uses the compiler's knowledge of branches (`if`/`while`) in your code to aggressively seek out more paths through your code, keeping "interesting" inputs for further mutation in some loose analogy to evolutionary success. This also takes some extra setup, but is
+<p align="center"> <img src="../static/afl-lop.png"> </p>
+
+AFL (American Fuzzy Lop, thanks wikipedia) is a bit smarter than the average jank script though, being a *genetic* fuzzer which uses the compiler's knowledge of branches (`if`/`while`) in your code to aggressively seek out more paths through your code, keeping "interesting" inputs for further mutation in some loose analogy to evolutionary success. This also takes some extra setup, but is
 [extremely](https://www.sqlite.org/src/info/a59ae93ee990a55)
 [effective](https://marc.info/?l=openssl-dev&m=145890788100691&w=2)
 in practice for finding elusive bugs.
 
 <!--more-->
-
-<p align="center"> <img src="../static/afl-lop.png"> </p>
 
 ## Setup
 
@@ -24,7 +24,7 @@ extract it using `tar xf afl-latest.tgz` and compile it with a single `make` in 
 ```sh
 $ tar xf afl-latest.tgz
 
-$ cd afl-2.52b # or whatever version you get
+$ cd afl-2.52b # replace with the version you got
 
 $ ls
 Makefile             afl-cmin       afl-tmin.c    docs          qemu_mode
@@ -66,7 +66,7 @@ item 142, set -2147483648, d: -2147483648
 Test it a little manually to make sure your reference works and then create a directory to
 store some sample inputs in. I called it `cases` and put a couple commands in like this:
 
-```
+```sh
 $ cat cases/test
 + 420
 + 12
@@ -84,7 +84,9 @@ Now let the fuzzer install its branch tracking code in the binary by compiling y
 $ AFL_HARDEN=1 afl-clang -fsanitize=undefined -fsanitize-undefined-trap-on-error [files/flags...]
 ```
 
-This additionally enables clean crashes on subtle buffer overflows and undefined behavior issues.
+This additionally enables clean crashes on subtle buffer overflows and undefined behavior issues
+([sanitizers](https://clang.llvm.org/docs/index.html) are a must when writing C in general.
+You can also enable address-sanitizer if you have a high enough process memory limit - I didn't - but `AFL_HARDEN` enables `_FORTIFY_SOURCE=2` which should achieve a similar effect).
 
 ## Fuzzing
 
@@ -92,28 +94,26 @@ Now debugging with a clever fuzzer is like a game, where you have to fix bugs fo
 determined to break your code. It can be pretty rewarding!
 
 To start, run
-```
+
+```sh
 $ afl-fuzz -i cases -o output-dir ./program
 ```
+
 and some cool colorful information should appear... and oh no there's a crash?
 
 <p align="center"> <img src="../static/afl-fail.png"> </p>
 
 Immediately stop the fuzzing with control+c and ask AFL to *minimise* the failure case using heuristics:
 
-```
+```sh
 $ afl-tmin -i output/crashes/id\:000000\,sig\:06\,src\:000000\,op\:havoc\,rep\:16 -o case -- ./a.out
 ```
 
 Outputting a reduced input sample into `case` which will make your program crash - you may need
 to tab complete in `output/crashes` to choose a test case. Now you can debug the issue by examining the program in a debugger or editor. Then, recompile with your fixes and repeat, until the
-`cycles done` in the top right of the interface is yellow (preferably green, but in my experience
-AFL finds bugs in simple programs within minutes).
+`cycles done` in the top right of the interface is yellow (preferably green, but in my experience AFL finds bugs in simple programs within minutes).
 
-I personally find this workflow more satisfying and effective than collecting a large corpus of
-failure cases, as a single error in code can lead to many related issues which can be fixed in
-one go. Of course, you might lose some fuzzing progress, but that's usually not a consideration
-unless fuzzing some large project.
+I personally find this workflow more satisfying and effective than collecting a large corpus of failure cases, as a single error in code can lead to many related issues which can be fixed in one go. Of course, you might lose some fuzzing progress, but that's usually not a consideration unless fuzzing some large project.
 
 ## Conclusion
 Genetic fuzzing with AFL often finds very elusive bugs which are difficult to detect without

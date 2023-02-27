@@ -1,5 +1,102 @@
 <?xml version="1.0"?>
-<feed xmlns="http://www.w3.org/2005/Atom"> <title>(gensym)</title> <link href="https://plisp.github.io"/> <link type="application/atom+xml" rel="self" href="https://plisp.github.io/atom.xml"/> <updated>Sun, 16 Jan 2022 09:10:36 +0000</updated> <author> <name>plisp</name> </author> <entry> <link type="text/html" rel="alternate" href="https://plisp.github.io/posts/Terminals-ARE-NOT-GUI.html"/> <title>Terminals ARE NOT GUI</title> <published>2022-01-16 16:02:09</published> <updated>2022-01-16 16:02:09</updated> <author> <name>plisp</name> <uri>https://plisp.github.io</uri> </author> <content type="html">&lt;p&gt;Unless you&#039;re dealing solely with ascii, which is typically a naive assumption in our 
+<feed xmlns="http://www.w3.org/2005/Atom"> <title>(gensym)</title> <link href="https://plisp.github.io"/> <link type="application/atom+xml" rel="self" href="https://plisp.github.io/atom.xml"/> <updated>Mon, 27 Feb 2023 16:10:22 +1100</updated> <author> <name>plisp</name> </author> <entry> <link type="text/html" rel="alternate" href="https://plisp.github.io/posts/Intro-to-fuzzing-with-AFL.html"/> <title>Intro to fuzzing with AFL</title> <published>2022-07-04 14:31:44</published> <updated>2022-07-04 14:31:44</updated> <author> <name>plisp</name> <uri>https://plisp.github.io</uri> </author> <content type="html">&lt;p&gt;Fuzzing is essentially testing code with lots random inputs to hopefully get a crash if the code is incorrect.&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt; &lt;img src=&quot;../static/afl-lop.png&quot;&gt; &lt;/p&gt;
+
+&lt;p&gt;AFL (American Fuzzy Lop ^ thanks wikipedia) is a bit smarter than the average jank script though, being a &lt;em&gt;genetic&lt;/em&gt; fuzzer which uses the compiler&#039;s knowledge of branches (&lt;code&gt;if&lt;/code&gt;/&lt;code&gt;while&lt;/code&gt;) to aggressively root out new paths through code, keeping &amp;quot;interesting&amp;quot; inputs for further mutation in some loose analogy to evolutionary success. This also takes some extra setup, but is
+&lt;a href=&quot;https://www.sqlite.org/src/info/a59ae93ee990a55&quot; &gt;extremely&lt;/a&gt;
+&lt;a href=&quot;https://marc.info/?l=openssl-dev&amp;m=145890788100691&amp;w=2&quot; &gt;effective&lt;/a&gt;
+in practice for finding elusive bugs.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;h2&gt;Setup&lt;/h2&gt;
+
+&lt;p&gt;First grab the &lt;a href=&quot;https://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz&quot; &gt;code&lt;/a&gt;,
+extract it using &lt;code&gt;tar xf afl-latest.tgz&lt;/code&gt; and compile it with a single &lt;code&gt;make&lt;/code&gt; in the source directory.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ tar xf afl-latest.tgz
+
+$ cd afl-2.52b # replace with the version you got
+
+$ ls
+Makefile             afl-cmin       afl-tmin.c    docs          qemu_mode
+QuickStartGuide.txt  afl-fuzz.c     afl-whatsup   experimental  test-instr.c
+README               afl-gcc.c      alloc-inl.h   hash.h        testcases
+afl-analyze.c        afl-gotcpu.c   config.h      libdislocator types.h
+afl-as.c             afl-plot       debug.h       libtokencap
+afl-as.h             afl-showmap.c  dictionaries  llvm_mode
+
+$ make
+[*] Checking for the ability to compile x86 code...
+[+] Everything seems to be working, ready to compile.
+...&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The next step is to write a test program which reads from standard input and runs a number of operations which you&#039;re interested in testing. With thorough checking of both operation results and internal structures with &lt;code&gt;assert()&lt;/code&gt;, any incorrect behavior will result in a crash, notifying the fuzzer. Be warned: this also includes any errors while reading input, which should be handled gracefully by the test program without crashing as AFL &lt;em&gt;will&lt;/em&gt; feed it weird stuff.&lt;/p&gt;
+
+&lt;p&gt;Here&#039;s a sample session from some Set testing code - note I inputted everything after the &lt;code&gt;&amp;gt;&lt;/code&gt; prompts, to run certain set operations like display, insertion, set floor, etc..&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ./program
+&amp;gt;s
+Set:{0} cur item:0
+&amp;gt;+ 3
+&amp;gt;s
+Set:{0, 3} cur item:0
+&amp;gt;&amp;gt;
+&amp;gt;s
+Set:{0, 3} cur item:3
+&amp;gt;f 2
+item 2, set floor 0
+&amp;gt;c 2
+item 2, set ceil 3
+&amp;gt;q&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Test it a little manually to make sure your reference works and then create a directory to store some sample inputs in. I called it &lt;code&gt;cases&lt;/code&gt; and put a couple commands in a file like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ cat cases/test
++ 420
++ -12
+s
+n
+&amp;gt;
+f 3
+c 0
+q&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now let the fuzzer install its branch tracking code in the program by compiling with:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ AFL_HARDEN=1 afl-clang -fsanitize=undefined -fsanitize-undefined-trap-on-error [files/flags...]&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This additionally enables clean crashes on subtle buffer overflows and undefined behavior issues
+(&lt;a href=&quot;https://clang.llvm.org/docs/index.html&quot; &gt;sanitizers&lt;/a&gt; are a must when writing C in general.
+You can also enable address-sanitizer if you have a high enough process memory limit - I didn&#039;t - but &lt;code&gt;AFL_HARDEN&lt;/code&gt; enables &lt;code&gt;_FORTIFY_SOURCE=2&lt;/code&gt; which should achieve a similar effect).&lt;/p&gt;
+
+&lt;h2&gt;Fuzzing&lt;/h2&gt;
+
+&lt;p&gt;Now using a clever fuzzer is like a game, where you have to fix bugs found by an AI determined to break your code. There&#039;s still thinking and facepalming involved, but it can be very rewarding!&lt;/p&gt;
+
+&lt;p&gt;To start, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ afl-fuzz -i cases -o fuzz-output ./program&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and some cool colorful information should appear... and oh no there&#039;s a crash?&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt; &lt;img src=&quot;../static/afl-fail.png&quot;&gt; &lt;/p&gt;
+
+&lt;p&gt;Immediately stop the fuzzing with control+c and ask AFL to &lt;em&gt;minimise&lt;/em&gt; the failure case using its heuristics (choosing an older input file in the crashes directory)&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ afl-tmin -i fuzz-output/crashes/[id\:000...] -o case -- ./program&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This will write a simplified input sample into &lt;code&gt;case&lt;/code&gt; which will make your program crash. Now you can debug the issue by feeding your program the input in a debugger or valgrind as usual. Then, recompile with your fixes and keep fuzzing until the &lt;code&gt;cycles done:&lt;/code&gt; meter in the top right corner is yellow; preferably green, but in my experience AFL finds most bugs in simple programs within minutes.&lt;/p&gt;
+
+&lt;p&gt;I personally found this workflow more satisfying and effective than collecting a large corpus of failure cases, as a single error often leads to many related issues which can be fixed in one go. Of course, you might need to recompile and lose some fuzzing progress, but that&#039;s usually not a consideration unless fuzzing a large codebase.&lt;/p&gt;
+
+&lt;h2&gt;Conclusion&lt;/h2&gt;
+
+&lt;p&gt;Genetic fuzzing with AFL often finds very elusive bugs which are difficult to detect without formal verification, which can be somewhat error-prone in itself. Combined with tools that can trigger crashes early, the combination can be a lifesaver especially when writing C.&lt;/p&gt;
+
+&lt;p&gt;Good luck and happy fuzzing!&lt;/p&gt;
+</content> </entry><entry> <link type="text/html" rel="alternate" href="https://plisp.github.io/posts/Terminals-ARE-NOT-GUI.html"/> <title>Terminals ARE NOT GUI</title> <published>2022-01-16 16:02:09</published> <updated>2022-01-16 16:02:09</updated> <author> <name>plisp</name> <uri>https://plisp.github.io</uri> </author> <content type="html">&lt;p&gt;Unless you&#039;re dealing solely with ascii, which is typically a naive assumption in our 
 Unicode world and &lt;em&gt;especially&lt;/em&gt; in the realm of text editing widgets, terminal emulators
 should be avoided for the dusty VT100 relics they are.&lt;/p&gt;
 
@@ -189,8 +286,6 @@ running valgrind&lt;/li&gt;
 &lt;li&gt;debug by richly inspecting state and directly redefining functions&lt;/li&gt;
 &lt;li&gt;generate a control flow graph leading up to a debugger crash, displaying values of
 variables involved at each branch (debug printing but automatic) or better:&lt;/li&gt;
-&lt;li&gt;reverse time by undoing observable side-effecting code (external routines like i/o are harder to
-deal with, this might be possible if the OS was designed around persistence)&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;Now some of these may be theoretically possible in a modern IDE, but with structural
@@ -226,80 +321,6 @@ eliminates the textual redundancy and works with the editing environment to incr
 analyse program invariants.&lt;/p&gt;
 
 &lt;p&gt;More posts to come!&lt;/p&gt;
-</content> </entry><entry> <link type="text/html" rel="alternate" href="https://plisp.github.io/posts/A-trick-for-simpler-priority-queues.html"/> <title>A trick for simpler priority queues</title> <published>2021-08-28 18:20:08</published> <updated>2021-08-28 18:20:08</updated> <author> <name>plisp</name> <uri>https://plisp.github.io</uri> </author> <content type="html">&lt;p&gt;I almost forgot I had this blog setup, but today I found a interesting trick which almost nobody
-seems to have used in their heaps so here it is
-(&lt;a href=&quot;https://github.com/vy/libpqueue/blob/master/src/pqueue.c&quot; &gt;update: someone did&lt;/a&gt;).&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;p&gt;&lt;a href=&quot;http://opendatastructures.org/ods-python/10_Heaps.html&quot; &gt;Heaps&lt;/a&gt; are a common structure
-for implementing priority queues, being able to both extract the minimum/maximum priority
-element and insert a new element in &lt;code&gt;O(log n)&lt;/code&gt;. The typical implementation is an implicit
-complete binary tree embedded within an array, which is simple and has good cache locality.&lt;/p&gt;
-
-&lt;p&gt;Normally the root of the heap is present at index 0, with the children of &lt;code&gt;i&lt;/code&gt; at &lt;code&gt;2i+1&lt;/code&gt;
-and &lt;code&gt;2i+2&lt;/code&gt;, and its parent at &lt;code&gt;(i-1)/2&lt;/code&gt;. However by leaving index 0 empty and
-indexing the heap from 1, you can simplify these calculations and save a few arithmetic ops.&lt;/p&gt;
-
-&lt;p align=&quot;center&quot;&gt;
-  &lt;img width=&quot;460&quot; height=&quot;300&quot; src=&quot;../static/heap.png&quot;&gt;
-&lt;/p&gt;
-
-&lt;p&gt;Additionally, if you &lt;code&gt;aligned_alloc&lt;/code&gt; the heap array, you may be able to improve cache
-alignment of children. For example, assuming 64-bit integer elements and cache lines, the 8
-great-grandchildren of &lt;code&gt;a[i]&lt;/code&gt; at indices &lt;code&gt;a[8i]&lt;/code&gt; to &lt;code&gt;a[8i+7]&lt;/code&gt; will lie in a single cache
-line as 64 divides &lt;code&gt;8i * 8 bytes&lt;/code&gt;. This allows prefetching multiple levels in advance.&lt;/p&gt;
-
-&lt;p&gt;Further if you keep the heap capacity as a power of 2, you get a complete binary tree,
-and so the depth of a large heap should be obvious to the branch predictor. Then sifting
-down only needs to check the validity of the right child since either both, or neither are
-valid in a complete tree, which saves several comparisions when popping from the heap
-(this can of course also be done in a 0-indexed heap by leaving the final element empty).&lt;/p&gt;
-
-&lt;p&gt;Combining these tricks yields quite a gain in simplicity and theoretically, performance
-(benchmarks later?).&lt;/p&gt;
-
-&lt;p&gt;Here&#039;s some source code in C for a integer max heap, but the idea should be clear enough.
-Details can be found in my &lt;a href=&quot;https://github.com/plisp/dsdump&quot; &gt;collection of algorithms&lt;/a&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;&lt;span class=&quot;code&quot;&gt;&lt;span class=&quot;symbol&quot;&gt;typedef&lt;/span&gt; &lt;span class=&quot;symbol&quot;&gt;struct&lt;/span&gt; heap &lt;span class=&quot;paren1&quot;&gt;{&lt;span class=&quot;code&quot;&gt;
-    size_t size, cap;
-    &lt;span class=&quot;symbol&quot;&gt;long&lt;/span&gt; *data;
-&lt;/span&gt;}&lt;/span&gt; Heap;
-
-Heap *heap_new&lt;span class=&quot;paren1&quot;&gt;(&lt;span class=&quot;code&quot;&gt;&lt;/span&gt;)&lt;/span&gt; &lt;span class=&quot;paren1&quot;&gt;{&lt;span class=&quot;code&quot;&gt;
-    &lt;span class=&quot;symbol&quot;&gt;struct&lt;/span&gt; heap *new = malloc&lt;span class=&quot;paren2&quot;&gt;(&lt;span class=&quot;code&quot;&gt;&lt;span class=&quot;symbol&quot;&gt;sizeof&lt;/span&gt; *new&lt;/span&gt;)&lt;/span&gt;;
-    new-&amp;gt;size = 1;
-    new-&amp;gt;cap = 2;
-    &lt;span class=&quot;symbol&quot;&gt;return&lt;/span&gt; new;
-&lt;/span&gt;}&lt;/span&gt;
-
-&lt;span class=&quot;comment&quot;&gt;// sifts the element recently pushed to the index heap-&amp;gt;size up as far as possible
-&lt;/span&gt;&lt;span class=&quot;symbol&quot;&gt;int&lt;/span&gt; sift_down&lt;span class=&quot;paren1&quot;&gt;(&lt;span class=&quot;code&quot;&gt;Heap *heap&lt;/span&gt;)&lt;/span&gt; &lt;span class=&quot;paren1&quot;&gt;{&lt;span class=&quot;code&quot;&gt;
-    &lt;span class=&quot;symbol&quot;&gt;long&lt;/span&gt; *a = heap-&amp;gt;data;
-    size_t i = heap-&amp;gt;size, parent = i/2;
-    &lt;span class=&quot;comment&quot;&gt;//
-&lt;/span&gt;    &lt;span class=&quot;symbol&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;paren2&quot;&gt;(&lt;span class=&quot;code&quot;&gt;parent &amp;gt; 0 &amp;amp;&amp;amp; a&lt;span class=&quot;paren3&quot;&gt;[&lt;span class=&quot;code&quot;&gt;i&lt;/span&gt;]&lt;/span&gt; &amp;gt; a&lt;span class=&quot;paren3&quot;&gt;[&lt;span class=&quot;code&quot;&gt;parent&lt;/span&gt;]&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt; &lt;span class=&quot;paren2&quot;&gt;{&lt;span class=&quot;code&quot;&gt;
-        swap&lt;span class=&quot;paren3&quot;&gt;(&lt;span class=&quot;code&quot;&gt;&amp;amp;a&lt;span class=&quot;paren4&quot;&gt;[&lt;span class=&quot;code&quot;&gt;i&lt;/span&gt;]&lt;/span&gt;, &amp;amp;a&lt;span class=&quot;paren4&quot;&gt;[&lt;span class=&quot;code&quot;&gt;parent&lt;/span&gt;]&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;;
-        i = parent, parent = i/2;
-    &lt;/span&gt;}&lt;/span&gt;
-&lt;/span&gt;}&lt;/span&gt;
-
-&lt;span class=&quot;symbol&quot;&gt;void&lt;/span&gt; sift_down&lt;span class=&quot;paren1&quot;&gt;(&lt;span class=&quot;code&quot;&gt;Heap *heap&lt;/span&gt;)&lt;/span&gt; &lt;span class=&quot;paren1&quot;&gt;{&lt;span class=&quot;code&quot;&gt;
-    &lt;span class=&quot;symbol&quot;&gt;long&lt;/span&gt; *a = heap-&amp;gt;data;
-    &lt;span class=&quot;symbol&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;paren2&quot;&gt;(&lt;span class=&quot;code&quot;&gt;size_t i, max_child = 1, left, right;;&lt;/span&gt;)&lt;/span&gt; &lt;span class=&quot;paren2&quot;&gt;{&lt;span class=&quot;code&quot;&gt;
-        i = max_child;
-        left = i*2, right = i*2 + 1;
-        &lt;span class=&quot;symbol&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;paren3&quot;&gt;(&lt;span class=&quot;code&quot;&gt;right &amp;gt;= heap-&amp;gt;size&lt;/span&gt;)&lt;/span&gt; break;
-        &lt;span class=&quot;comment&quot;&gt;// swap with larger child &amp;gt; other child
-&lt;/span&gt;        max_child = a&lt;span class=&quot;paren3&quot;&gt;[&lt;span class=&quot;code&quot;&gt;left&lt;/span&gt;]&lt;/span&gt; &amp;gt; a&lt;span class=&quot;paren3&quot;&gt;[&lt;span class=&quot;code&quot;&gt;right&lt;/span&gt;]&lt;/span&gt; ? left : right;
-        &lt;span class=&quot;symbol&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;paren3&quot;&gt;(&lt;span class=&quot;code&quot;&gt;a&lt;span class=&quot;paren4&quot;&gt;[&lt;span class=&quot;code&quot;&gt;max_child&lt;/span&gt;]&lt;/span&gt; &amp;gt; a&lt;span class=&quot;paren4&quot;&gt;[&lt;span class=&quot;code&quot;&gt;i&lt;/span&gt;]&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;
-            swap&lt;span class=&quot;paren3&quot;&gt;(&lt;span class=&quot;code&quot;&gt;&amp;amp;a&lt;span class=&quot;paren4&quot;&gt;[&lt;span class=&quot;code&quot;&gt;max_child&lt;/span&gt;]&lt;/span&gt;, &amp;amp;a&lt;span class=&quot;paren4&quot;&gt;[&lt;span class=&quot;code&quot;&gt;i&lt;/span&gt;]&lt;/span&gt;&lt;/span&gt;)&lt;/span&gt;;
-        &lt;span class=&quot;symbol&quot;&gt;else&lt;/span&gt; break;
-    &lt;/span&gt;}&lt;/span&gt;
-&lt;/span&gt;}&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;More posts to come soon.&lt;/p&gt;
 </content> </entry><entry> <link type="text/html" rel="alternate" href="https://plisp.github.io/posts/2020-08-15.html"/> <title>2020-08-15</title> <published>2020-08-15 10:23:51</published> <updated>2020-08-15 10:23:51</updated> <author> <name>plisp</name> <uri>https://plisp.github.io</uri> </author> <content type="html">&lt;p&gt;Switched from jekyll to coleslaw. Things look much nicer now.
 Code highlighting is looking real sexy.&lt;/p&gt;
 

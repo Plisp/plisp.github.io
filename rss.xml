@@ -1,5 +1,102 @@
 <?xml version="1.0"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>(gensym)</title> <link>https://plisp.github.io</link> <atom:link href="https://plisp.github.io/rss.xml" rel="self" type="application/rss+xml" /> <language>en-us</language> <pubDate>Sun, 16 Jan 2022 09:10:36 +0000</pubDate> <item> <title>Terminals ARE NOT GUI</title> <link>https://plisp.github.io/posts/Terminals-ARE-NOT-GUI.html</link> <pubDate>2022-01-16 16:02:09</pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io/posts/Terminals-ARE-NOT-GUI.html</guid> <category><![CDATA[ terminals ]]></category> <description><![CDATA[ <p>Unless you're dealing solely with ascii, which is typically a naive assumption in our 
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>(gensym)</title> <link>https://plisp.github.io</link> <atom:link href="https://plisp.github.io/rss.xml" rel="self" type="application/rss+xml" /> <language>en-us</language> <pubDate>Mon, 27 Feb 2023 16:10:22 +1100</pubDate> <item> <title>Intro to fuzzing with AFL</title> <link>https://plisp.github.io/posts/Intro-to-fuzzing-with-AFL.html</link> <pubDate>2022-07-04 14:31:44</pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io/posts/Intro-to-fuzzing-with-AFL.html</guid> <category><![CDATA[ data-structures ]]></category><category><![CDATA[ fuzzing ]]></category> <description><![CDATA[ <p>Fuzzing is essentially testing code with lots random inputs to hopefully get a crash if the code is incorrect.</p>
+
+<p align="center"> <img src="../static/afl-lop.png"> </p>
+
+<p>AFL (American Fuzzy Lop ^ thanks wikipedia) is a bit smarter than the average jank script though, being a <em>genetic</em> fuzzer which uses the compiler's knowledge of branches (<code>if</code>/<code>while</code>) to aggressively root out new paths through code, keeping &quot;interesting&quot; inputs for further mutation in some loose analogy to evolutionary success. This also takes some extra setup, but is
+<a href="https://www.sqlite.org/src/info/a59ae93ee990a55" >extremely</a>
+<a href="https://marc.info/?l=openssl-dev&m=145890788100691&w=2" >effective</a>
+in practice for finding elusive bugs.</p>
+
+<!--more-->
+
+<h2>Setup</h2>
+
+<p>First grab the <a href="https://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz" >code</a>,
+extract it using <code>tar xf afl-latest.tgz</code> and compile it with a single <code>make</code> in the source directory.</p>
+
+<pre><code>$ tar xf afl-latest.tgz
+
+$ cd afl-2.52b # replace with the version you got
+
+$ ls
+Makefile             afl-cmin       afl-tmin.c    docs          qemu_mode
+QuickStartGuide.txt  afl-fuzz.c     afl-whatsup   experimental  test-instr.c
+README               afl-gcc.c      alloc-inl.h   hash.h        testcases
+afl-analyze.c        afl-gotcpu.c   config.h      libdislocator types.h
+afl-as.c             afl-plot       debug.h       libtokencap
+afl-as.h             afl-showmap.c  dictionaries  llvm_mode
+
+$ make
+[*] Checking for the ability to compile x86 code...
+[+] Everything seems to be working, ready to compile.
+...</code></pre>
+
+<p>The next step is to write a test program which reads from standard input and runs a number of operations which you're interested in testing. With thorough checking of both operation results and internal structures with <code>assert()</code>, any incorrect behavior will result in a crash, notifying the fuzzer. Be warned: this also includes any errors while reading input, which should be handled gracefully by the test program without crashing as AFL <em>will</em> feed it weird stuff.</p>
+
+<p>Here's a sample session from some Set testing code - note I inputted everything after the <code>&gt;</code> prompts, to run certain set operations like display, insertion, set floor, etc..</p>
+
+<pre><code>$ ./program
+&gt;s
+Set:{0} cur item:0
+&gt;+ 3
+&gt;s
+Set:{0, 3} cur item:0
+&gt;&gt;
+&gt;s
+Set:{0, 3} cur item:3
+&gt;f 2
+item 2, set floor 0
+&gt;c 2
+item 2, set ceil 3
+&gt;q</code></pre>
+
+<p>Test it a little manually to make sure your reference works and then create a directory to store some sample inputs in. I called it <code>cases</code> and put a couple commands in a file like this:</p>
+
+<pre><code>$ cat cases/test
++ 420
++ -12
+s
+n
+&gt;
+f 3
+c 0
+q</code></pre>
+
+<p>Now let the fuzzer install its branch tracking code in the program by compiling with:</p>
+
+<pre><code>$ AFL_HARDEN=1 afl-clang -fsanitize=undefined -fsanitize-undefined-trap-on-error [files/flags...]</code></pre>
+
+<p>This additionally enables clean crashes on subtle buffer overflows and undefined behavior issues
+(<a href="https://clang.llvm.org/docs/index.html" >sanitizers</a> are a must when writing C in general.
+You can also enable address-sanitizer if you have a high enough process memory limit - I didn't - but <code>AFL_HARDEN</code> enables <code>_FORTIFY_SOURCE=2</code> which should achieve a similar effect).</p>
+
+<h2>Fuzzing</h2>
+
+<p>Now using a clever fuzzer is like a game, where you have to fix bugs found by an AI determined to break your code. There's still thinking and facepalming involved, but it can be very rewarding!</p>
+
+<p>To start, run</p>
+
+<pre><code>$ afl-fuzz -i cases -o fuzz-output ./program</code></pre>
+
+<p>and some cool colorful information should appear... and oh no there's a crash?</p>
+
+<p align="center"> <img src="../static/afl-fail.png"> </p>
+
+<p>Immediately stop the fuzzing with control+c and ask AFL to <em>minimise</em> the failure case using its heuristics (choosing an older input file in the crashes directory)</p>
+
+<pre><code>$ afl-tmin -i fuzz-output/crashes/[id\:000...] -o case -- ./program</code></pre>
+
+<p>This will write a simplified input sample into <code>case</code> which will make your program crash. Now you can debug the issue by feeding your program the input in a debugger or valgrind as usual. Then, recompile with your fixes and keep fuzzing until the <code>cycles done:</code> meter in the top right corner is yellow; preferably green, but in my experience AFL finds most bugs in simple programs within minutes.</p>
+
+<p>I personally found this workflow more satisfying and effective than collecting a large corpus of failure cases, as a single error often leads to many related issues which can be fixed in one go. Of course, you might need to recompile and lose some fuzzing progress, but that's usually not a consideration unless fuzzing a large codebase.</p>
+
+<h2>Conclusion</h2>
+
+<p>Genetic fuzzing with AFL often finds very elusive bugs which are difficult to detect without formal verification, which can be somewhat error-prone in itself. Combined with tools that can trigger crashes early, the combination can be a lifesaver especially when writing C.</p>
+
+<p>Good luck and happy fuzzing!</p>
+ ]]></description> </item><item> <title>Terminals ARE NOT GUI</title> <link>https://plisp.github.io/posts/Terminals-ARE-NOT-GUI.html</link> <pubDate>2022-01-16 16:02:09</pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io/posts/Terminals-ARE-NOT-GUI.html</guid> <category><![CDATA[ terminals ]]></category> <description><![CDATA[ <p>Unless you're dealing solely with ascii, which is typically a naive assumption in our 
 Unicode world and <em>especially</em> in the realm of text editing widgets, terminal emulators
 should be avoided for the dusty VT100 relics they are.</p>
 
@@ -189,8 +286,6 @@ running valgrind</li>
 <li>debug by richly inspecting state and directly redefining functions</li>
 <li>generate a control flow graph leading up to a debugger crash, displaying values of
 variables involved at each branch (debug printing but automatic) or better:</li>
-<li>reverse time by undoing observable side-effecting code (external routines like i/o are harder to
-deal with, this might be possible if the OS was designed around persistence)</li>
 </ul>
 
 <p>Now some of these may be theoretically possible in a modern IDE, but with structural
@@ -226,80 +321,6 @@ eliminates the textual redundancy and works with the editing environment to incr
 analyse program invariants.</p>
 
 <p>More posts to come!</p>
- ]]></description> </item><item> <title>A trick for simpler priority queues</title> <link>https://plisp.github.io/posts/A-trick-for-simpler-priority-queues.html</link> <pubDate>2021-08-28 18:20:08</pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io/posts/A-trick-for-simpler-priority-queues.html</guid> <category><![CDATA[ data-structures ]]></category> <description><![CDATA[ <p>I almost forgot I had this blog setup, but today I found a interesting trick which almost nobody
-seems to have used in their heaps so here it is
-(<a href="https://github.com/vy/libpqueue/blob/master/src/pqueue.c" >update: someone did</a>).</p>
-
-<!--more-->
-
-<p><a href="http://opendatastructures.org/ods-python/10_Heaps.html" >Heaps</a> are a common structure
-for implementing priority queues, being able to both extract the minimum/maximum priority
-element and insert a new element in <code>O(log n)</code>. The typical implementation is an implicit
-complete binary tree embedded within an array, which is simple and has good cache locality.</p>
-
-<p>Normally the root of the heap is present at index 0, with the children of <code>i</code> at <code>2i+1</code>
-and <code>2i+2</code>, and its parent at <code>(i-1)/2</code>. However by leaving index 0 empty and
-indexing the heap from 1, you can simplify these calculations and save a few arithmetic ops.</p>
-
-<p align="center">
-  <img width="460" height="300" src="../static/heap.png">
-</p>
-
-<p>Additionally, if you <code>aligned_alloc</code> the heap array, you may be able to improve cache
-alignment of children. For example, assuming 64-bit integer elements and cache lines, the 8
-great-grandchildren of <code>a[i]</code> at indices <code>a[8i]</code> to <code>a[8i+7]</code> will lie in a single cache
-line as 64 divides <code>8i * 8 bytes</code>. This allows prefetching multiple levels in advance.</p>
-
-<p>Further if you keep the heap capacity as a power of 2, you get a complete binary tree,
-and so the depth of a large heap should be obvious to the branch predictor. Then sifting
-down only needs to check the validity of the right child since either both, or neither are
-valid in a complete tree, which saves several comparisions when popping from the heap
-(this can of course also be done in a 0-indexed heap by leaving the final element empty).</p>
-
-<p>Combining these tricks yields quite a gain in simplicity and theoretically, performance
-(benchmarks later?).</p>
-
-<p>Here's some source code in C for a integer max heap, but the idea should be clear enough.
-Details can be found in my <a href="https://github.com/plisp/dsdump" >collection of algorithms</a></p>
-
-<pre><code><span class="code"><span class="symbol">typedef</span> <span class="symbol">struct</span> heap <span class="paren1">{<span class="code">
-    size_t size, cap;
-    <span class="symbol">long</span> *data;
-</span>}</span> Heap;
-
-Heap *heap_new<span class="paren1">(<span class="code"></span>)</span> <span class="paren1">{<span class="code">
-    <span class="symbol">struct</span> heap *new = malloc<span class="paren2">(<span class="code"><span class="symbol">sizeof</span> *new</span>)</span>;
-    new-&gt;size = 1;
-    new-&gt;cap = 2;
-    <span class="symbol">return</span> new;
-</span>}</span>
-
-<span class="comment">// sifts the element recently pushed to the index heap-&gt;size up as far as possible
-</span><span class="symbol">int</span> sift_down<span class="paren1">(<span class="code">Heap *heap</span>)</span> <span class="paren1">{<span class="code">
-    <span class="symbol">long</span> *a = heap-&gt;data;
-    size_t i = heap-&gt;size, parent = i/2;
-    <span class="comment">//
-</span>    <span class="symbol">while</span> <span class="paren2">(<span class="code">parent &gt; 0 &amp;&amp; a<span class="paren3">[<span class="code">i</span>]</span> &gt; a<span class="paren3">[<span class="code">parent</span>]</span></span>)</span> <span class="paren2">{<span class="code">
-        swap<span class="paren3">(<span class="code">&amp;a<span class="paren4">[<span class="code">i</span>]</span>, &amp;a<span class="paren4">[<span class="code">parent</span>]</span></span>)</span>;
-        i = parent, parent = i/2;
-    </span>}</span>
-</span>}</span>
-
-<span class="symbol">void</span> sift_down<span class="paren1">(<span class="code">Heap *heap</span>)</span> <span class="paren1">{<span class="code">
-    <span class="symbol">long</span> *a = heap-&gt;data;
-    <span class="symbol">for</span> <span class="paren2">(<span class="code">size_t i, max_child = 1, left, right;;</span>)</span> <span class="paren2">{<span class="code">
-        i = max_child;
-        left = i*2, right = i*2 + 1;
-        <span class="symbol">if</span> <span class="paren3">(<span class="code">right &gt;= heap-&gt;size</span>)</span> break;
-        <span class="comment">// swap with larger child &gt; other child
-</span>        max_child = a<span class="paren3">[<span class="code">left</span>]</span> &gt; a<span class="paren3">[<span class="code">right</span>]</span> ? left : right;
-        <span class="symbol">if</span> <span class="paren3">(<span class="code">a<span class="paren4">[<span class="code">max_child</span>]</span> &gt; a<span class="paren4">[<span class="code">i</span>]</span></span>)</span>
-            swap<span class="paren3">(<span class="code">&amp;a<span class="paren4">[<span class="code">max_child</span>]</span>, &amp;a<span class="paren4">[<span class="code">i</span>]</span></span>)</span>;
-        <span class="symbol">else</span> break;
-    </span>}</span>
-</span>}</span></span></code></pre>
-
-<p>More posts to come soon.</p>
  ]]></description> </item><item> <title>2020-08-15</title> <link>https://plisp.github.io/posts/2020-08-15.html</link> <pubDate>2020-08-15 10:23:51</pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io/posts/2020-08-15.html</guid> <category><![CDATA[ meta ]]></category> <description><![CDATA[ <p>Switched from jekyll to coleslaw. Things look much nicer now.
 Code highlighting is looking real sexy.</p>
 

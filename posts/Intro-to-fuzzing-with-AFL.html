@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en"> <head> <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> <title>(gensym)</title> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <link href="https://plisp.github.io/css/bootstrap.min.css" rel="stylesheet" media="screen"> <link href="https://plisp.github.io/css/custom.css" rel="stylesheet" media="screen"> <link rel="alternate" href="https://plisp.github.io/rss.xml" type="application/rss+xml" /> <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'foo']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script> </head> <body> <div class="container-fluid"> <div class="row-fluid"> <div class="offset2 span8"> <div class="row-fluid"> <div class="navbar navbar-inverse"> <div class="navbar-inner"> <a class="brand" href="https://plisp.github.io">(gensym)</a> <ul class="nav"> <li> <a href="http://github.com/plisp">Github</a> </li> </ul> </div> </div> </div> <div class="row-fluid"> <div class="row-fluid">
+<h1 class="page-header">Intro to fuzzing with AFL</h1>
+<p> Tagged as <a href="https://plisp.github.io/tag/data-structures.html">data-structures</a>, <a href="https://plisp.github.io/tag/fuzzing.html">fuzzing</a> </p> <p class="date-posted"> Written on 2022-07-04 14:31:44 </p> <p>Fuzzing is essentially testing code with lots random inputs to hopefully get a crash if the code is incorrect.</p>
+
+<p align="center"> <img src="../static/afl-lop.png"> </p>
+
+<p>AFL (American Fuzzy Lop ^ thanks wikipedia) is a bit smarter than the average jank script though, being a <em>genetic</em> fuzzer which uses the compiler's knowledge of branches (<code>if</code>/<code>while</code>) to aggressively root out new paths through code, keeping &quot;interesting&quot; inputs for further mutation in some loose analogy to evolutionary success. This also takes some extra setup, but is
+<a href="https://www.sqlite.org/src/info/a59ae93ee990a55" >extremely</a>
+<a href="https://marc.info/?l=openssl-dev&m=145890788100691&w=2" >effective</a>
+in practice for finding elusive bugs.</p>
+
+<!--more-->
+
+<h2>Setup</h2>
+
+<p>First grab the <a href="https://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz" >code</a>,
+extract it using <code>tar xf afl-latest.tgz</code> and compile it with a single <code>make</code> in the source directory.</p>
+
+<pre><code>$ tar xf afl-latest.tgz
+
+$ cd afl-2.52b # replace with the version you got
+
+$ ls
+Makefile             afl-cmin       afl-tmin.c    docs          qemu_mode
+QuickStartGuide.txt  afl-fuzz.c     afl-whatsup   experimental  test-instr.c
+README               afl-gcc.c      alloc-inl.h   hash.h        testcases
+afl-analyze.c        afl-gotcpu.c   config.h      libdislocator types.h
+afl-as.c             afl-plot       debug.h       libtokencap
+afl-as.h             afl-showmap.c  dictionaries  llvm_mode
+
+$ make
+[*] Checking for the ability to compile x86 code...
+[+] Everything seems to be working, ready to compile.
+...</code></pre>
+
+<p>The next step is to write a test program which reads from standard input and runs a number of operations which you're interested in testing. With thorough checking of both operation results and internal structures with <code>assert()</code>, any incorrect behavior will result in a crash, notifying the fuzzer. Be warned: this also includes any errors while reading input, which should be handled gracefully by the test program without crashing as AFL <em>will</em> feed it weird stuff.</p>
+
+<p>Here's a sample session from some Set testing code - note I inputted everything after the <code>&gt;</code> prompts, to run certain set operations like display, insertion, set floor, etc..</p>
+
+<pre><code>$ ./program
+&gt;s
+Set:{0} cur item:0
+&gt;+ 3
+&gt;s
+Set:{0, 3} cur item:0
+&gt;&gt;
+&gt;s
+Set:{0, 3} cur item:3
+&gt;f 2
+item 2, set floor 0
+&gt;c 2
+item 2, set ceil 3
+&gt;q</code></pre>
+
+<p>Test it a little manually to make sure your reference works and then create a directory to store some sample inputs in. I called it <code>cases</code> and put a couple commands in a file like this:</p>
+
+<pre><code>$ cat cases/test
++ 420
++ -12
+s
+n
+&gt;
+f 3
+c 0
+q</code></pre>
+
+<p>Now let the fuzzer install its branch tracking code in the program by compiling with:</p>
+
+<pre><code>$ AFL_HARDEN=1 afl-clang -fsanitize=undefined -fsanitize-undefined-trap-on-error [files/flags...]</code></pre>
+
+<p>This additionally enables clean crashes on subtle buffer overflows and undefined behavior issues
+(<a href="https://clang.llvm.org/docs/index.html" >sanitizers</a> are a must when writing C in general.
+You can also enable address-sanitizer if you have a high enough process memory limit - I didn't - but <code>AFL_HARDEN</code> enables <code>_FORTIFY_SOURCE=2</code> which should achieve a similar effect).</p>
+
+<h2>Fuzzing</h2>
+
+<p>Now using a clever fuzzer is like a game, where you have to fix bugs found by an AI determined to break your code. There's still thinking and facepalming involved, but it can be very rewarding!</p>
+
+<p>To start, run</p>
+
+<pre><code>$ afl-fuzz -i cases -o fuzz-output ./program</code></pre>
+
+<p>and some cool colorful information should appear... and oh no there's a crash?</p>
+
+<p align="center"> <img src="../static/afl-fail.png"> </p>
+
+<p>Immediately stop the fuzzing with control+c and ask AFL to <em>minimise</em> the failure case using its heuristics (choosing an older input file in the crashes directory)</p>
+
+<pre><code>$ afl-tmin -i fuzz-output/crashes/[id\:000...] -o case -- ./program</code></pre>
+
+<p>This will write a simplified input sample into <code>case</code> which will make your program crash. Now you can debug the issue by feeding your program the input in a debugger or valgrind as usual. Then, recompile with your fixes and keep fuzzing until the <code>cycles done:</code> meter in the top right corner is yellow; preferably green, but in my experience AFL finds most bugs in simple programs within minutes.</p>
+
+<p>I personally found this workflow more satisfying and effective than collecting a large corpus of failure cases, as a single error often leads to many related issues which can be fixed in one go. Of course, you might need to recompile and lose some fuzzing progress, but that's usually not a consideration unless fuzzing a large codebase.</p>
+
+<h2>Conclusion</h2>
+
+<p>Genetic fuzzing with AFL often finds very elusive bugs which are difficult to detect without formal verification, which can be somewhat error-prone in itself. Combined with tools that can trigger crashes early, the combination can be a lifesaver especially when writing C.</p>
+
+<p>Good luck and happy fuzzing!</p>
+ <ul class="pager"> <li class="previous"><a href="https://plisp.github.io/posts/Terminals-ARE-NOT-GUI.html">&larr; Previous</a></li>
+
+</ul> </div>
+ </div>  <div class="row-fluid"> <hr> <p class="fineprint">Unless otherwise credited all material <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"> <img alt="Creative Commons License" style="border-width:0" src="https://plisp.github.io/img/cc-by-sa.png" /> </a> by plisp <a id="coleslaw-logo" href="https://github.com/redline6561/coleslaw"> <img src="https://plisp.github.io/img/logo_small.jpg" alt="Coleslaw logo" /></p> </a> </div> </div> </div> </div> <script src="https://plisp.github.io/js/bootstrap.min.js"></script> </body> </html>

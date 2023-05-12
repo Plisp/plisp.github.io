@@ -54,7 +54,7 @@ Now let's try to formalize the original question a little in terms of this intui
 Since regexes (of the non-Perl kind) are equivalent to regular languages,
 we can ask whether the powers of 2 are regular over the base-10 alphabet.
 That is, can we construct a DFA which accepts exactly strings of 0-9
-corresponding to powers of 2.
+corresponding to powers of 2?
 
 Intuitively, this should be false, as 2 and 10 are not powers of a common base!
 Let's consider the problem through the clever exact characterization of regular languages
@@ -66,16 +66,31 @@ you append some well-chosen string to any pair.
 
 <p align="center"> <img src="../static/base-dfa-proof.jpg"> </p>
 
-A natural choice is to let the prefixes be the rings (modulo powers of 10)
+A natural choice is to let the prefixes be the elements of rings (modulo powers of 10)
 formed by repeating sequences of last digits, which clearly occur in an
-infinite number of powers of 2, so should be distinguishable (if the goal is true),
-as argued above.
-Generalizing to the full claim about arbitrary bases is left to the reader ;).
+infinite number of powers of 2.
+Consider any two prefixes `P,Q`, we show that they are distinguishable.
 
+If `P,Q` are of equal length, they are distinguishable
+by appending prefixes such that `PX` is a power of 2,
+as the difference `PX - QX = P - Q` (subtracting least-significant first!)
+is fixed while the difference between powers of 2 grows without bound.
+Therefore `QX` will not be in the language with sufficiently large `X`.
+
+If `P,Q` are of different lengths, Let `X` be some long string such that `PX,QX`
+are both powers of 2. Then WLOG suppose `|P| < |Q|` and P,Q have rings of size
+`p,q` respectively so `p < q`.
+Then the next power of 2 ending in `P` is `PX * 2^p`, so the string appended is
+approximately equal to `X * 2^p`, but
+clearly appending `X * 2^p` to `Q` is less than `X * 2^q`, so `P,Q` may be
+distinguished by appending this string.
+
+Generalizing to the full claim about arbitrary bases is left to the reader ;).
 N.B. there's a small caveat that when proving the set `a^n` is non-regular in base
 `b` where `a` contains all prime factors of `b` (possibly to a smaller power),
 all prefixes will be zeroes, but this is still enough to see that some pair is
 distinguishable iff they are powers of the same base.
 Otherwise we may assume some prime factor in the base does not occur in the set of
-powers being represented and this gives increasingly large rings (for sufficiently
-long positive prefixes, multiplying by `a` will produce a larger ring).
+powers being represented and this ensures rings grow unbounded in size (considering
+sufficiently long powers of the base `b`, multiplying by `a` will produce an unique
+value, and so a larger ring).

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"> <head> <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> <title>(gensym)</title> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <link href="/css/bootstrap.min.css" rel="stylesheet" media="screen"> <link href="/css/custom.css" rel="stylesheet" media="screen"> <link rel="alternate" href="/rss.xml" type="application/rss+xml" /> <script type="text/javascript">
+<html lang="en"> <head> <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> <title>(gensym)</title> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <link href="https://plisp.github.io//css/bootstrap.min.css" rel="stylesheet" media="screen"> <link href="https://plisp.github.io//css/custom.css" rel="stylesheet" media="screen"> <link rel="alternate" href="https://plisp.github.io//rss.xml" type="application/rss+xml" /> <script type="text/javascript">
 
   var _gaq = _gaq || [];
   _gaq.push(['_setAccount', 'foo']);
@@ -11,9 +11,9 @@
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
   })();
 
-</script> </head> <body> <div class="container-fluid"> <div class="row-fluid"> <div class="offset2 span8"> <div class="row-fluid"> <div class="navbar navbar-inverse"> <div class="navbar-inner"> <a class="brand" href="">(gensym)</a> <ul class="nav"> <li> <a href="http://github.com/plisp">Github</a> </li> </ul> </div> </div> </div> <div class="row-fluid"> <div class="row-fluid">
+</script> </head> <body> <div class="container-fluid"> <div class="row-fluid"> <div class="offset2 span8"> <div class="row-fluid"> <div class="navbar navbar-inverse"> <div class="navbar-inner"> <a class="brand" href="https://plisp.github.io/">(gensym)</a> <ul class="nav"> <li> <a href="http://github.com/plisp">Github</a> </li> </ul> </div> </div> </div> <div class="row-fluid"> <div class="row-fluid">
 <h1 class="page-header">Regular number sets</h1>
-<p> Tagged as <a href="/tag/automata.html">automata</a> </p> <p class="date-posted"> Written on 2023-04-29 12:26:46 </p> <p>Have you ever wondered why you can't match powers of 2 with a regex?
+<p> Tagged as <a href="https://plisp.github.io//tag/automata.html">automata</a> </p> <p class="date-posted"> Written on 2023-04-29 12:26:46 </p> <p>Have you ever wondered why you can't match powers of 2 with a regex?
 Well I didn't... at least until I took Theory of Computation and went down this
 number-theoretical rabbithole on a whim.
 Let's uncover some cool structure!</p>
@@ -62,7 +62,7 @@ express the same regular sets, in particular the powers of<code>b</code>.</p>
 Since regexes (of the non-Perl kind) are equivalent to regular languages,
 we can ask whether the powers of 2 are regular over the base-10 alphabet.
 That is, can we construct a DFA which accepts exactly strings of 0-9
-corresponding to powers of 2.</p>
+corresponding to powers of 2?</p>
 
 <p>Intuitively, this should be false, as 2 and 10 are not powers of a common base!
 Let's consider the problem through the clever exact characterization of regular languages
@@ -74,20 +74,35 @@ you append some well-chosen string to any pair.</p>
 
 <p align="center"> <img src="../static/base-dfa-proof.jpg"> </p>
 
-<p>A natural choice is to let the prefixes be the rings (modulo powers of 10)
+<p>A natural choice is to let the prefixes be the elements of rings (modulo powers of 10)
 formed by repeating sequences of last digits, which clearly occur in an
-infinite number of powers of 2, so should be distinguishable (if the goal is true),
-as argued above.
-Generalizing to the full claim about arbitrary bases is left to the reader ;).</p>
+infinite number of powers of 2.
+Consider any two prefixes <code>P,Q</code>, we show that they are distinguishable.</p>
 
-<p>N.B. there's a small caveat that when proving the set <code>a^n</code> is non-regular in base
+<p>If <code>P,Q</code> are of equal length, they are distinguishable
+by appending prefixes such that <code>PX</code> is a power of 2,
+as the difference <code>PX - QX = P - Q</code> (subtracting least-significant first!)
+is fixed while the difference between powers of 2 grows without bound.
+Therefore <code>QX</code> will not be in the language with sufficiently large <code>X</code>.</p>
+
+<p>If <code>P,Q</code> are of different lengths, Let <code>X</code> be some long string such that <code>PX,QX</code>
+are both powers of 2. Then WLOG suppose <code>|P| &lt; |Q|</code> and P,Q have rings of size
+<code>p,q</code> respectively so <code>p &lt; q</code>.
+Then the next power of 2 ending in <code>P</code> is <code>PX * 2^p</code>, so the string appended is
+approximately equal to <code>X * 2^p</code>, but
+clearly appending <code>X * 2^p</code> to <code>Q</code> is less than <code>X * 2^q</code>, so <code>P,Q</code> may be
+distinguished by appending this string.</p>
+
+<p>Generalizing to the full claim about arbitrary bases is left to the reader ;).
+N.B. there's a small caveat that when proving the set <code>a^n</code> is non-regular in base
 <code>b</code> where <code>a</code> contains all prime factors of <code>b</code> (possibly to a smaller power),
 all prefixes will be zeroes, but this is still enough to see that some pair is
 distinguishable iff they are powers of the same base.
 Otherwise we may assume some prime factor in the base does not occur in the set of
-powers being represented and this gives increasingly large rings (for sufficiently
-long positive prefixes, multiplying by <code>a</code> will produce a larger ring).</p>
- <ul class="pager"> <li class="previous"><a href="/posts/Intro-to-fuzzing-with-AFL.html">&larr; Previous</a></li>
+powers being represented and this ensures rings grow unbounded in size (considering
+sufficiently long powers of the base <code>b</code>, multiplying by <code>a</code> will produce an unique
+value, and so a larger ring).</p>
+ <ul class="pager"> <li class="previous"><a href="https://plisp.github.io//posts/Intro-to-fuzzing-with-AFL.html">&larr; Previous</a></li>
 
 </ul> </div>
- </div>  <div class="row-fluid"> <hr> <p class="fineprint">Unless otherwise credited all material <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"> <img alt="Creative Commons License" style="border-width:0" src="/img/cc-by-sa.png" /> </a> by plisp <a id="coleslaw-logo" href="https://github.com/redline6561/coleslaw"> <img src="/img/logo_small.jpg" alt="Coleslaw logo" /></p> </a> </div> </div> </div> </div> <script src="/js/bootstrap.min.js"></script> </body> </html>
+ </div>  <div class="row-fluid"> <hr> <p class="fineprint">Unless otherwise credited all material <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"> <img alt="Creative Commons License" style="border-width:0" src="https://plisp.github.io//img/cc-by-sa.png" /> </a> by plisp <a id="coleslaw-logo" href="https://github.com/redline6561/coleslaw"> <img src="https://plisp.github.io//img/logo_small.jpg" alt="Coleslaw logo" /></p> </a> </div> </div> </div> </div> <script src="https://plisp.github.io//js/bootstrap.min.js"></script> </body> </html>

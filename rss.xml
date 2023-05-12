@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>(gensym)</title> <link></link> <atom:link href="/rss.xml" rel="self" type="application/rss+xml" /> <language>en-us</language> <pubDate>Wed, 10 May 2023 14:23:16 +0000</pubDate> <item> <title>Regular number sets</title> <link>/posts/Regular-number-sets.html</link> <pubDate>2023-04-29 12:26:46</pubDate> <author>plisp</author> <guid isPermaLink="true">/posts/Regular-number-sets.html</guid> <category><![CDATA[ automata ]]></category> <description><![CDATA[ <p>Have you ever wondered why you can't match powers of 2 with a regex?
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>(gensym)</title> <link>https://plisp.github.io/</link> <atom:link href="https://plisp.github.io//rss.xml" rel="self" type="application/rss+xml" /> <language>en-us</language> <pubDate>Fri, 12 May 2023 13:58:18 +0000</pubDate> <item> <title>Regular number sets</title> <link>https://plisp.github.io//posts/Regular-number-sets.html</link> <pubDate>2023-04-29 12:26:46</pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io//posts/Regular-number-sets.html</guid> <category><![CDATA[ automata ]]></category> <description><![CDATA[ <p>Have you ever wondered why you can't match powers of 2 with a regex?
 Well I didn't... at least until I took Theory of Computation and went down this
 number-theoretical rabbithole on a whim.
 Let's uncover some cool structure!</p>
@@ -48,7 +48,7 @@ express the same regular sets, in particular the powers of<code>b</code>.</p>
 Since regexes (of the non-Perl kind) are equivalent to regular languages,
 we can ask whether the powers of 2 are regular over the base-10 alphabet.
 That is, can we construct a DFA which accepts exactly strings of 0-9
-corresponding to powers of 2.</p>
+corresponding to powers of 2?</p>
 
 <p>Intuitively, this should be false, as 2 and 10 are not powers of a common base!
 Let's consider the problem through the clever exact characterization of regular languages
@@ -60,20 +60,35 @@ you append some well-chosen string to any pair.</p>
 
 <p align="center"> <img src="../static/base-dfa-proof.jpg"> </p>
 
-<p>A natural choice is to let the prefixes be the rings (modulo powers of 10)
+<p>A natural choice is to let the prefixes be the elements of rings (modulo powers of 10)
 formed by repeating sequences of last digits, which clearly occur in an
-infinite number of powers of 2, so should be distinguishable (if the goal is true),
-as argued above.
-Generalizing to the full claim about arbitrary bases is left to the reader ;).</p>
+infinite number of powers of 2.
+Consider any two prefixes <code>P,Q</code>, we show that they are distinguishable.</p>
 
-<p>N.B. there's a small caveat that when proving the set <code>a^n</code> is non-regular in base
+<p>If <code>P,Q</code> are of equal length, they are distinguishable
+by appending prefixes such that <code>PX</code> is a power of 2,
+as the difference <code>PX - QX = P - Q</code> (subtracting least-significant first!)
+is fixed while the difference between powers of 2 grows without bound.
+Therefore <code>QX</code> will not be in the language with sufficiently large <code>X</code>.</p>
+
+<p>If <code>P,Q</code> are of different lengths, Let <code>X</code> be some long string such that <code>PX,QX</code>
+are both powers of 2. Then WLOG suppose <code>|P| &lt; |Q|</code> and P,Q have rings of size
+<code>p,q</code> respectively so <code>p &lt; q</code>.
+Then the next power of 2 ending in <code>P</code> is <code>PX * 2^p</code>, so the string appended is
+approximately equal to <code>X * 2^p</code>, but
+clearly appending <code>X * 2^p</code> to <code>Q</code> is less than <code>X * 2^q</code>, so <code>P,Q</code> may be
+distinguished by appending this string.</p>
+
+<p>Generalizing to the full claim about arbitrary bases is left to the reader ;).
+N.B. there's a small caveat that when proving the set <code>a^n</code> is non-regular in base
 <code>b</code> where <code>a</code> contains all prime factors of <code>b</code> (possibly to a smaller power),
 all prefixes will be zeroes, but this is still enough to see that some pair is
 distinguishable iff they are powers of the same base.
 Otherwise we may assume some prime factor in the base does not occur in the set of
-powers being represented and this gives increasingly large rings (for sufficiently
-long positive prefixes, multiplying by <code>a</code> will produce a larger ring).</p>
- ]]></description> </item><item> <title>Intro to fuzzing with AFL</title> <link>/posts/Intro-to-fuzzing-with-AFL.html</link> <pubDate>2022-07-04 14:31:44</pubDate> <author>plisp</author> <guid isPermaLink="true">/posts/Intro-to-fuzzing-with-AFL.html</guid> <category><![CDATA[ data-structures ]]></category><category><![CDATA[ fuzzing ]]></category> <description><![CDATA[ <p>Fuzzing is essentially testing code with lots random inputs to hopefully get a crash if the code is incorrect.</p>
+powers being represented and this ensures rings grow unbounded in size (considering
+sufficiently long powers of the base <code>b</code>, multiplying by <code>a</code> will produce an unique
+value, and so a larger ring).</p>
+ ]]></description> </item><item> <title>Intro to fuzzing with AFL</title> <link>https://plisp.github.io//posts/Intro-to-fuzzing-with-AFL.html</link> <pubDate>2022-07-04 14:31:44</pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io//posts/Intro-to-fuzzing-with-AFL.html</guid> <category><![CDATA[ data-structures ]]></category><category><![CDATA[ fuzzing ]]></category> <description><![CDATA[ <p>Fuzzing is essentially testing code with lots random inputs to hopefully get a crash if the code is incorrect.</p>
 
 <p align="center"> <img src="../static/afl-lop.png"> </p>
 
@@ -170,7 +185,7 @@ You can also enable address-sanitizer if you have a high enough process memory l
 <p>Genetic fuzzing with AFL often finds very elusive bugs which are difficult to detect without formal verification, which can be somewhat error-prone in itself. Combined with tools that can trigger crashes early, the combination can be a lifesaver especially when writing C.</p>
 
 <p>Good luck and happy fuzzing!</p>
- ]]></description> </item><item> <title>Terminals ARE NOT GUI</title> <link>/posts/Terminals-ARE-NOT-GUI.html</link> <pubDate>2022-01-16 16:02:09</pubDate> <author>plisp</author> <guid isPermaLink="true">/posts/Terminals-ARE-NOT-GUI.html</guid> <category><![CDATA[ terminals ]]></category> <description><![CDATA[ <p>Unless you're dealing solely with ascii, which is typically a naive assumption in our 
+ ]]></description> </item><item> <title>Terminals ARE NOT GUI</title> <link>https://plisp.github.io//posts/Terminals-ARE-NOT-GUI.html</link> <pubDate>2022-01-16 16:02:09</pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io//posts/Terminals-ARE-NOT-GUI.html</guid> <category><![CDATA[ terminals ]]></category> <description><![CDATA[ <p>Unless you're dealing solely with ascii, which is typically a naive assumption in our 
 Unicode world and <em>especially</em> in the realm of text editing widgets, terminal emulators
 should be avoided for the dusty VT100 relics they are.</p>
 
@@ -268,7 +283,7 @@ can draw emojis in a consistent way.</p>
 
 <p>While the shell is handy for opaque textual command pipelines, programs needing
 real user interaction should be implemented in something sane like SDL.</p>
- ]]></description> </item><item> <title>Editing abstraction not text (updated)</title> <link>/posts/Editing-abstraction-not-text-updated.html</link> <pubDate>2021-11-29 10:24:59</pubDate> <author>plisp</author> <guid isPermaLink="true">/posts/Editing-abstraction-not-text-updated.html</guid> <category><![CDATA[ editing ]]></category> <description><![CDATA[ <p>So I started off writing a <a href="https://github.com/Plisp/vico" >text editor</a> that would suit
+ ]]></description> </item><item> <title>Editing abstraction not text (updated)</title> <link>https://plisp.github.io//posts/Editing-abstraction-not-text-updated.html</link> <pubDate>2021-11-29 10:24:59</pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io//posts/Editing-abstraction-not-text-updated.html</guid> <category><![CDATA[ editing ]]></category> <description><![CDATA[ <p>So I started off writing a <a href="https://github.com/Plisp/vico" >text editor</a> that would suit
 my needs: being fully extensible via a scripting language <strong>and</strong> performant.  Along the
 way I devised <a href="https://github.com/Plisp/libst" >an improvement</a> on the
 <a href="https://en.wikipedia.org/wiki/Piece_table" >piece-table</a> which significantly outperforms
@@ -395,7 +410,7 @@ eliminates the textual redundancy and works with the editing environment to incr
 analyse program invariants.</p>
 
 <p>More posts to come!</p>
- ]]></description> </item><item> <title>2020-08-15</title> <link>/posts/2020-08-15.html</link> <pubDate>2020-08-15 10:23:51</pubDate> <author>plisp</author> <guid isPermaLink="true">/posts/2020-08-15.html</guid> <category><![CDATA[ meta ]]></category> <description><![CDATA[ <p>Switched from jekyll to coleslaw. Things look much nicer now.
+ ]]></description> </item><item> <title>2020-08-15</title> <link>https://plisp.github.io//posts/2020-08-15.html</link> <pubDate>2020-08-15 10:23:51</pubDate> <author>plisp</author> <guid isPermaLink="true">https://plisp.github.io//posts/2020-08-15.html</guid> <category><![CDATA[ meta ]]></category> <description><![CDATA[ <p>Switched from jekyll to coleslaw. Things look much nicer now.
 Code highlighting is looking real sexy.</p>
 
 <!--more-->
